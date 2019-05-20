@@ -1,11 +1,9 @@
 package com.phaserush.gallerybot
 
-import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.command.CommandManager
 import com.phaserush.gallerybot.data.Localization
 import com.phaserush.gallerybot.data.database.Database
-import com.phaserush.gallerybot.data.discord.GuildMeta
 import com.phaserush.gallerybot.data.exceptions.BotPermissionException
 import com.phaserush.gallerybot.data.exceptions.MemberPermissionException
 import discord4j.core.event.domain.message.MessageCreateEvent

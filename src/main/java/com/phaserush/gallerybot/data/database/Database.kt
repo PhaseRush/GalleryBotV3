@@ -9,6 +9,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.sql.PreparedStatement
 import java.sql.ResultSetMetaData
+import java.sql.Types
 
 class Database {
     private val logger: Logger = LoggerFactory.getLogger(Database::class.java)
@@ -31,7 +32,7 @@ class Database {
      * @param sql The sql statement to execute
      * @return Returns a Mono<Void>
      */
-    fun set(@Language("MariaDB") sql: String, vararg args: Any): Mono<Void> {
+    fun set(@Language("MariaDB") sql: String, vararg args: Any?): Mono<Void> {
         return Mono.fromCallable {
             poolingDataSource.connection.use { con ->
                 prepareStatement(con.prepareStatement(sql), *args)
@@ -76,9 +77,18 @@ class Database {
      * @param args The arguments to fill into the statement
      * @return The actually prepared prepared statement
      */
-    private fun prepareStatement(statement: PreparedStatement, vararg args: Any): PreparedStatement {
+    private fun prepareStatement(statement: PreparedStatement, vararg args: Any?): PreparedStatement {
         for (i in 1..args.size) {
-            statement.setObject(i, args[i - 1])
+            val arg: Any? = args[i - 1]
+            when (arg) {
+                is String? -> println(arg)
+                else -> println("hello! $i")
+            }
+            /*when (arg) {
+                is String? -> if (arg == null) statement.setNull(i, Types.VARCHAR) else statement.setString(i, arg)
+                is Long? -> if (arg == null) statement.setNull(i, Types.BIGINT) else statement.setLong(i, arg)
+                else -> println("You idiot $i")
+            }*/
         }
         return statement
     }
