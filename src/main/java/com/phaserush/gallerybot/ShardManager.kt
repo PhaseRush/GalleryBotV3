@@ -15,6 +15,7 @@ class ShardManager {
     val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
             .setShardCount(1)
             .build()
+            .map { it.setInitialPresence(Presence.online(Activity.playing(config.presenceMessage))) }
             .map { it.build() }
             .collectList()
             .block()!!
