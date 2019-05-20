@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 
 class ShardManager {
+    val eventHandler = EventHandler()
     val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
             .setShardCount(1)
             .build()
@@ -30,7 +31,7 @@ class ShardManager {
                             .filter { it.member.isPresent }
                             .filter { !it.member.get().isBot }
                             .filter { it.message.content.isPresent }
-                            .flatMap { it.message.channel.flatMap { c -> c.createMessage("hoi") } }
+                            .flatMap { eventHandler.onMessageCreateEvent(it) }
                     ).onErrorContinue { t, u -> t.printStackTrace() }
                 }
         )
