@@ -6,26 +6,17 @@ import discord4j.core.`object`.entity.Channel
 import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
 import discord4j.core.event.domain.message.MessageCreateEvent
+import discord4j.core.shard.ShardingClientBuilder
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 
 class ShardManager {
-    val shards: List<DiscordClient>
-
-    init {
-        val tempShards: MutableList<DiscordClient> = mutableListOf()
-        val shardCount = if (config.debug) 1 else config.shardCount
-
-        for (i: Int in 0 until shardCount) {
-            tempShards.add(DiscordClientBuilder(if (config.debug) config.debugToken else config.token)
-                    .setShardCount(shardCount)
-                    .setShardIndex(i)
-                    .setInitialPresence(Presence.idle(Activity.playing(config.presenceMessage)))
-                    .setEventScheduler(Schedulers.immediate())
-                    .build())
-        }
-        shards = tempShards
-    }
+    val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
+            .setShardCount(1)
+            .build()
+            .map { it.build() }
+            .collectList()
+            .block()!!
 
     /**
      * Logs all of the shards in and set the event listeners
