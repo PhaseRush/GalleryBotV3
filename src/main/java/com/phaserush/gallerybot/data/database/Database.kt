@@ -9,6 +9,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.sql.PreparedStatement
 import java.sql.ResultSetMetaData
+import java.sql.Types
 
 class Database {
     private val logger: Logger = LoggerFactory.getLogger(Database::class.java)
@@ -19,10 +20,7 @@ class Database {
     }
 
     init {
-        if (!setup()) {
-            logger.error("Failed to connect to database. Are you sure you used the right credentials?")
-            System.exit(-1)
-        }
+        setup()
     }
 
     /**
@@ -47,7 +45,7 @@ class Database {
      * @args The arguments for the prepared statement
      * @return Returns all the resulting rows from the query
      */
-    fun get(@Language("MariaDB") sql: String, vararg args: Any): Flux<Row> {
+    fun get(@Language("MariaDB") sql: String, vararg args: Any?): Flux<Row> {
         return Flux.create { sink ->
             poolingDataSource.connection.use { con ->
                 prepareStatement(con.prepareStatement(sql), *args).use { statement ->
@@ -78,9 +76,9 @@ class Database {
      */
     private fun prepareStatement(statement: PreparedStatement, vararg args: Any?): PreparedStatement {
         for (i in 1..args.size) {
-            val arg: Any? = args[i - 1]
-            when (arg) {
-                is String? -> println(arg)
+            when (val arg: Any? = args[i - 1]) {
+                is String? -> if (arg == null) statement.setNull(i, Types.VARCHAR) else statement.setString(i, arg)
+                is Long -> statement.setLong(i, arg)
                 else -> println("hello! $i")
             }
             /*when (arg) {
@@ -95,7 +93,10 @@ class Database {
     /**
      * This will be used to create the necessary tables and schemas for the bot, pls dun touch *poke*
      */
-    private fun setup(): Boolean {
-        return true
+    private fun setup() {
+        set("CREATE TABLE IF NOT EXISTS guilds(id BIGINT PRIMARY KEY NOT NULL, prefix VARCHAR(12) DEFAULT NULL, locale VARCHAR(5) NOT NULL DEFAULT 'en-US')")
+                .block()
+        set("CREATE TABLE IF NOT EXISTS users(id BIGINT PRIMARY KEY NOT NULL, infoCardUrl VARCHAR(1024) DEFAULT NULL)")
+                .block()
     }
 }

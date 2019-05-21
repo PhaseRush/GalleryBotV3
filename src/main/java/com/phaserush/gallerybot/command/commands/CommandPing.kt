@@ -11,11 +11,11 @@ class CommandPing : Command(
 ) {
     override fun call(context: CommandContext): Mono<Void> {
         return context.getGuild()
-                //.map { it.Locale }
+                .map { it.locale }
                 .flatMap {
                     context.event.message.channel.flatMap { c ->
                         c.createMessage(
-                                context.localization.getMessage(Locale.ENGLISH, "ping", context.event.client.responseTime)
+                                context.localization.getMessage(it, "ping", context.event.client.responseTime)
                         )
                     }
                 }

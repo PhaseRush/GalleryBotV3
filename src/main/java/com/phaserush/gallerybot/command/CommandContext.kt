@@ -17,15 +17,6 @@ class CommandContext(val event: MessageCreateEvent,
     /**
      * Fetch the user metadata from the database
      *
-     * want something like this im guessing...
-     *
-     * create table users (
-     * id SIGNED BIGINT PRIMARY KEY
-     * isArtist TINYINT DEFAULT 0
-     * infoCard_picUrl VARCHAR(200)
-     * infoCard_otherUrl VARCHAR(200)
-     * );
-     *
      * @return The user metadata
      */
     fun getUser(): Mono<UserMeta> {
@@ -35,11 +26,7 @@ class CommandContext(val event: MessageCreateEvent,
                 .map {
                     UserMeta(
                             event.member.get().id,
-                            it["isArtist"] as Boolean,
-                            UserMeta.InfoCard(
-                                    it["infoCard_picUrl"] as String,
-                                    it["infoCard_otherUrl"] as String
-                            )
+                            Optional.empty() // TODO
                     )
                 }.switchIfEmpty(
                         database.set("INSERT INTO users (id) VALUES (?)", event.member.get().id.asLong())
@@ -59,11 +46,11 @@ class CommandContext(val event: MessageCreateEvent,
                 .map {
                     GuildMeta(
                             event.guildId.get(),
-                            it["prefix"] as String, // attribute that corresponds to prefix column
+                            it["prefix"] as String?, // attribute that corresponds to prefix column
                             Locale.forLanguageTag(it["locale"] as String)
                     )
                 }.switchIfEmpty {
-                    database.set("INSERT INTO guilds (id, prefix, locale) VALUES (?, ?, ?)", event.guildId.get().asLong(), null, Locale.ENGLISH.toLanguageTag())
+                    database.set("INSERT INTO guilds (id) VALUES (?)", event.guildId.get().asLong())
                             .then(getGuild())
                 }
     }
