@@ -9,7 +9,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.sql.PreparedStatement
 import java.sql.ResultSetMetaData
-import java.sql.Types
 
 class Database {
     private val logger: Logger = LoggerFactory.getLogger(Database::class.java)
@@ -94,7 +93,7 @@ class Database {
     }
 
     /**
-     * This will be used to create the necessary tables and schemas for the bot, pls dun touch
+     * This will be used to create the necessary tables and schemas for the bot, pls dun touch *poke*
      */
     private fun setup(): Boolean {
         return true
