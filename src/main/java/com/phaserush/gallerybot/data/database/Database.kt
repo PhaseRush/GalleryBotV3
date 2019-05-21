@@ -13,7 +13,7 @@ import java.sql.ResultSetMetaData
 class Database {
     private val logger: Logger = LoggerFactory.getLogger(Database::class.java)
     private val poolingDataSource: HikariDataSource = HikariDataSource().apply {
-        jdbcUrl = "jdbc:mysql://${config.databaseIp}:${config.databasePort}/${config.databaseName}"
+        jdbcUrl = "jdbc:mysql://${config.databaseIp}:${config.databasePort}/${config.databaseName}?serverTimezone=UTC"
         username = config.databaseUsername
         password = config.databasePassword
     }
