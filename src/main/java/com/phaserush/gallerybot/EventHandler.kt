@@ -1,14 +1,17 @@
 package com.phaserush.gallerybot
 
+import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.command.CommandManager
 import com.phaserush.gallerybot.data.Localization
+import com.phaserush.gallerybot.data.Node
 import com.phaserush.gallerybot.data.database.Database
 import com.phaserush.gallerybot.data.exceptions.BotPermissionException
 import com.phaserush.gallerybot.data.exceptions.MemberPermissionException
 import discord4j.core.event.domain.message.MessageCreateEvent
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
+import java.lang.NullPointerException
 
 class EventHandler {
     private val commandManager: CommandManager = CommandManager()
@@ -29,20 +32,16 @@ class EventHandler {
         val context = CommandContext(event, database, localization)
         val content = event.message.content.get()
 
-        return event.guild
-                .flatMap { context.getGuild() } // Get the guild from context
+        return context.getGuild()
                 .map {
                     if(it.prefix == null) setOf(config.prefix) else setOf(config.prefix, it.prefix)
                 } // Get the prefix for this guild
                 .flatMap { prefixes ->
                     Mono.justOrEmpty(prefixes.firstOrNull { prefix -> content.startsWith(prefix) })
                 } // Check if the message starts with one of the guild's prefixes
-                .map { prefix ->
-                    val pos = content.indexOf(' ')
-                    if (pos == -1) content.substring(prefix!!.length, content.length) else content.substring(prefix!!.length, pos)
-                } // Substring the prefix and the arguments out
+                .map { content.substring(it!!.length, content.length) } // Substring the prefix and the arguments out
                 .filter { command -> command.isNotBlank() }
-                .flatMap { command -> Mono.justOrEmpty(commandManager.commands[command]) } // Find the relevant command
+                .map { command -> traverseTree(command) } // Find the relevant command
                 .filterWhen { command ->
                     command!!.permissions.testBot(event)
                             .flatMap { set ->
@@ -91,5 +90,22 @@ class EventHandler {
                         } // Handle any other exception that may have occurred
                     }
                 }
+    }
+
+    fun traverseTree(broken: List<String>): Command? {
+        val base: Node<Command> = traverseBase(broken[0]) ?: return null
+        traverse()
+        throw NullPointerException("Exhausted options!")
+    }
+
+    fun traverseBase(base: String): Node<Command>? {
+        for (c in commandManager.commandNodes)
+            if (c.data.name.equals(base))
+                return c
+        return null
+    }
+
+    fun breakIntoList(breakable: String): List<String> {
+        return breakable.split("\\s".toRegex())
     }
 }
