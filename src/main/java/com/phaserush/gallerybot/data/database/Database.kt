@@ -96,7 +96,9 @@ class Database {
     private fun setup() {
         set("CREATE TABLE IF NOT EXISTS guilds(id BIGINT PRIMARY KEY NOT NULL, prefix VARCHAR(12) DEFAULT NULL, locale VARCHAR(5) NOT NULL DEFAULT 'en-US')")
                 .block()
+        logger.info("Guild table created")
         set("CREATE TABLE IF NOT EXISTS users(id BIGINT PRIMARY KEY NOT NULL, infoCardUrl VARCHAR(1024) DEFAULT NULL)")
                 .block()
+        logger.info("Users table created")
     }
 }

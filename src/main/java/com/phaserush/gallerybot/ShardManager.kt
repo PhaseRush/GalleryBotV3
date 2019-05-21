@@ -1,18 +1,19 @@
 package com.phaserush.gallerybot
 
 import discord4j.core.DiscordClient
-import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.Channel
 import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.shard.ShardingClientBuilder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 
 class ShardManager {
-    val eventHandler = EventHandler()
-    val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
+    private val logger : Logger = LoggerFactory.getLogger(ShardManager::class.java)
+    private val eventHandler = EventHandler()
+    private val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
             .setShardCount(1)
             .build()
             .map { it.setInitialPresence(Presence.online(Activity.playing(config.presenceMessage))) }
@@ -33,7 +34,7 @@ class ShardManager {
                             .filter { !it.member.get().isBot }
                             .filter { it.message.content.isPresent }
                             .flatMap { eventHandler.onMessageCreateEvent(it) }
-                    ).onErrorContinue { t, u -> t.printStackTrace() }
+                    ).onErrorContinue { t, u -> logger.error(t.message) }
                 }
         )
                 .block()

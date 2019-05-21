@@ -15,6 +15,9 @@ class EventHandler {
     private val database: Database = Database()
     private val localization: Localization = Localization()
 
+    // private val logger: Logger = LoggerFactory.getLogger(EventHandler::class.java)
+
+
     /**
      * Executes upon every message created thweat passed through the filters
      * defined in {@link ShardManager#login login}
@@ -32,7 +35,7 @@ class EventHandler {
                     if(it.prefix == null) setOf(config.prefix) else setOf(config.prefix, it.prefix)
                 } // Get the prefix for this guild
                 .flatMap { prefixes ->
-                    Mono.justOrEmpty(prefixes.firstOrNull { prefix -> content.startsWith(prefix!!) })
+                    Mono.justOrEmpty(prefixes.firstOrNull { prefix -> content.startsWith(prefix) })
                 } // Check if the message starts with one of the guild's prefixes
                 .map { prefix ->
                     val pos = content.indexOf(' ')
@@ -74,14 +77,14 @@ class EventHandler {
                         is MemberPermissionException -> {
                             event.message.channel
                                     .flatMap { c ->
-                                        event.guild.flatMap { g -> c.createMessage("User is missing permisisons ${t.message!!}") }
+                                        event.guild.flatMap { g -> c.createMessage("User is missing permissions ${t.message!!}") }
                                     }
                                     .then()
                         } // Handle missing permissions for the user
                         else -> {
                             event.message.channel
                                     .flatMap { c ->
-                                        t.printStackTrace()
+                                        t.printStackTrace() // maybe log this instead
                                         event.guild.flatMap { g -> c.createMessage("An error or something!\n${t.message!!}") }
                                     }
                                     .then()
