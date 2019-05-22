@@ -1,17 +1,14 @@
 package com.phaserush.gallerybot
 
-import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.command.CommandManager
 import com.phaserush.gallerybot.data.Localization
-import com.phaserush.gallerybot.data.Node
 import com.phaserush.gallerybot.data.database.Database
 import com.phaserush.gallerybot.data.exceptions.BotPermissionException
 import com.phaserush.gallerybot.data.exceptions.MemberPermissionException
 import discord4j.core.event.domain.message.MessageCreateEvent
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
-import java.lang.NullPointerException
 
 class EventHandler {
     private val commandManager: CommandManager = CommandManager()
@@ -41,7 +38,10 @@ class EventHandler {
                 } // Check if the message starts with one of the guild's prefixes
                 .map { content.substring(it!!.length, content.length) } // Substring the prefix and the arguments out
                 .filter { command -> command.isNotBlank() }
-                .map { command -> traverseTree(command) } // Find the relevant command
+                .map { command -> commandManager.traverseThis(breakIntoList(command)) } // Find the relevant command
+                .map{ tuple2 ->
+                    tuple2.t2.forEach{o -> print(o + "\t")}
+                    tuple2.t1}
                 .filterWhen { command ->
                     command!!.permissions.testBot(event)
                             .flatMap { set ->
@@ -92,23 +92,23 @@ class EventHandler {
                 }
     }
 
-    fun traverseTree(broken: List<String>): Command? {
-        return traverse(traverseBase(broken[0]) ?: return null)
-    }
-
-    fun traverse(node: Node<Command>): Command {
-        for (child in node.children) {
-
-        }
-    }
-
-    fun traverseBase(base: String): Node<Command>? {
-        for (c in commandManager.commandNodes)
-            if (c.data.name.equals(base))
-                return c
-        return null
-    }
-
+    //    fun traverseTree(broken: List<String>): Command? {
+//        return traverse(traverseBase(broken[0]) ?: return null)
+//    }
+//
+//    fun traverse(node: Node<Command>): Command {
+//        for (child in node.children) {
+//
+//        }
+//    }
+//
+//    fun traverseBase(base: String): Node<Command>? {
+//        for (c in commandManager.commandNodes)
+//            if (c.data.name.equals(base))
+//                return c
+//        return null
+//    }
+//
     fun breakIntoList(breakable: String): List<String> {
         return breakable.split("\\s".toRegex())
     }
