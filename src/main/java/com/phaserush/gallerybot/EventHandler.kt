@@ -93,9 +93,13 @@ class EventHandler {
     }
 
     fun traverseTree(broken: List<String>): Command? {
-        val base: Node<Command> = traverseBase(broken[0]) ?: return null
-        traverse()
-        throw NullPointerException("Exhausted options!")
+        return traverse(traverseBase(broken[0]) ?: return null)
+    }
+
+    fun traverse(node: Node<Command>): Command {
+        for (child in node.children) {
+
+        }
     }
 
     fun traverseBase(base: String): Node<Command>? {

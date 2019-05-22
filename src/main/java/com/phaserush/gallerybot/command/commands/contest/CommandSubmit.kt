@@ -26,10 +26,13 @@ class CommandSubmit : Command(
                             dbCols["contestName"],
                             dbCols["guildId"],
                             dbCols["artistId"]
-                    ).then(context.event.message.channel.flatMap { c ->
-                        c.createMessage("You have already submitted artwork for $contestName:\n ${dbCols["imageUrl"]}")
-                    })
-                }.switchIfEmpty ( // first submission for artist into this contest
+                    )
+                            .flatMap {
+                                context.event.message.channel.flatMap { c ->
+                                    c.createMessage("You have already submitted artwork for $contestName:\n ${dbCols["imageUrl"]}")
+                                }
+                            }.then()
+                }.switchIfEmpty( // first submission for artist into this contest
                         context.database.set("INSERT into submissions VALUES (?,?,?,?,?,?,?)",
                                 contestName,
                                 context.event.guildId.get().asLong(),
@@ -40,10 +43,11 @@ class CommandSubmit : Command(
                                 if (context.event.message.attachments.size == 0) throw RuntimeException("Expected attachment but none found") else context.event.message.attachments.first().url
                         ).then()
                 )
-                .onErrorContinue{ t, e ->
+                .onErrorContinue { t, e ->
                     context.event.message.channel.flatMap { c ->
                         c.createMessage(t.message!!)
-                    }}
+                    }
+                }
                 .then()
     }// end fun
 }
