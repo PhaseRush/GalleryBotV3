@@ -3,6 +3,7 @@ package com.phaserush.gallerybot.command.commands.contest
 import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.data.contest.Contest
+import discord4j.core.`object`.entity.GuildMessageChannel
 import reactor.core.publisher.Mono
 import reactor.core.publisher.switchIfEmpty
 import java.lang.RuntimeException
@@ -33,7 +34,7 @@ class CommandSubmit : Command(
                                 contestName,
                                 context.event.guildId.get().asLong(),
                                 context.event.member.get().id.asLong(),
-                                context.event.message.channel.block().type(), // isNsfw
+                                context.event.message.channel.ofType(GuildMessageChannel::class.java).isNsfw(), // isNsfw
                                 context.event.message.timestamp,
                                 0,
                                 if (context.event.message.attachments.size == 0) throw RuntimeException("Expected attachment but none found") else context.event.message.attachments.first().url
