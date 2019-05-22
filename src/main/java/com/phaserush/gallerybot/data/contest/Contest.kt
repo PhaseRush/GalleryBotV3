@@ -1,21 +1,15 @@
 package com.phaserush.gallerybot.data.contest
 
 import discord4j.core.`object`.util.Snowflake
-import java.time.Month
 import java.time.ZonedDateTime
-import java.util.*
 
 data class Contest (
         // metadata
-        private val uuid    : UUID = UUID.randomUUID(),
-        private val month   : Month,
+        private val name : String,
+        private val guildId:Snowflake,
         private val theme   : String,
-        private val timezone: TimeZone, // maybe use SimpleTimeZone
         private val winnerId: Snowflake,
         private val isDone  : Boolean,
-
-        // contest info
-        private val submissions : MutableList<ContestSubmission>,
 
         // times                                           (Examples given for month of June)
         // submission

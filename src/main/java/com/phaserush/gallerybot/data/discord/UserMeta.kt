@@ -8,11 +8,11 @@ data class UserMeta(
         val infoCard: Optional<InfoCard>
 
 ) {
-    // not sure whether to make this in here, top level of this file, or separate file
-    // placeholder class for storing artist information
-    // TODO: Should probably move this to a separate class
-    // eh but InfoCard is a weak entity. does not exist without a User
+    /**
+     * Specifically for artists, and maybe patrons later on
+     */
     data class InfoCard (
+            val artistName:String,
             val picUrl   : String,
             val otherUrl : String
     )
