@@ -3,7 +3,6 @@ package com.phaserush.gallerybot.command
 import com.phaserush.gallerybot.command.commands.CommandContest
 import com.phaserush.gallerybot.command.commands.CommandPing
 import com.phaserush.gallerybot.command.commands.CommandSubmit
-import com.phaserush.gallerybot.command.commands.contest.CommandEdit
 import com.phaserush.gallerybot.data.Node
 import reactor.util.function.Tuple2
 import reactor.util.function.Tuples
@@ -13,11 +12,7 @@ class CommandManager {
     val commandNodes: List<Node<Command>> = listOf(
             Node<Command>(CommandPing()),
             Node(CommandContest(),
-                    listOf(
-                            Node<Command>(CommandSubmit(),
-                                    listOf(Node<Command>(CommandEdit()),
-                                            Node<Command>(CommandContest()))),
-                            Node<Command>(CommandEdit())))
+                    listOf(Node<Command>(CommandSubmit())))
     )
 
     init {
@@ -49,15 +44,12 @@ class CommandManager {
         return Tuples.of(command, getArgs(idx, list)) // should never run here, but we'll see :)
     }
 
-    private fun getArgs(idx: Int, list: List<String>) : List<String> {
-        println("idx: $idx \t $list")
-        return if (idx < list.size) list.subList(idx, list.size) else emptyList()
-    }
+    private fun getArgs(idx: Int, list: List<String>): List<String> = if (idx < list.size) list.subList(idx, list.size) else emptyList()
 
 
     private fun checkChildren(nodes: List<Node<Command>>, query: String): Command? {
         return nodes.stream()
-                .filter { it.data.aliases.contains(query) || it.data.name.equals(query) }
+                .filter { it.data.aliases.contains(query) || it.data.name == query }
                 .findFirst()
                 .map { it.data }
                 .orElse(null)

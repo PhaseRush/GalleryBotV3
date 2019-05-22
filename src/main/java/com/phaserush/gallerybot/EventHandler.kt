@@ -1,12 +1,16 @@
 package com.phaserush.gallerybot
 
+import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.command.CommandManager
 import com.phaserush.gallerybot.data.Localization
+import com.phaserush.gallerybot.data.argument.Argument
 import com.phaserush.gallerybot.data.database.Database
+import com.phaserush.gallerybot.data.dialog.WordDialog
 import com.phaserush.gallerybot.data.exceptions.BotPermissionException
 import com.phaserush.gallerybot.data.exceptions.MemberPermissionException
 import discord4j.core.event.domain.message.MessageCreateEvent
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 
@@ -14,9 +18,6 @@ class EventHandler {
     private val commandManager: CommandManager = CommandManager()
     private val database: Database = Database()
     private val localization: Localization = Localization()
-
-    // private val logger: Logger = LoggerFactory.getLogger(EventHandler::class.java)
-
 
     /**
      * Executes upon every message created thweat passed through the filters
@@ -31,7 +32,7 @@ class EventHandler {
 
         return context.getGuild()
                 .map {
-                    if(it.prefix == null) setOf(config.prefix) else setOf(config.prefix, it.prefix)
+                    if (it.prefix == null) setOf(config.prefix) else setOf(config.prefix, it.prefix)
                 } // Get the prefix for this guild
                 .flatMap { prefixes ->
                     Mono.justOrEmpty(prefixes.firstOrNull { prefix -> content.startsWith(prefix) })
@@ -39,27 +40,28 @@ class EventHandler {
                 .map { content.substring(it!!.length, content.length) } // Substring the prefix and the arguments out
                 .filter { command -> command.isNotBlank() }
                 .map { command -> commandManager.traverseThis(breakIntoList(command)) } // Find the relevant command
-                .map{ tuple2 ->
-                    tuple2.t2.forEach{o -> print(o + "\t")}
-                    tuple2.t1}
-                .filterWhen { command ->
-                    command!!.permissions.testBot(event)
-                            .flatMap { set ->
+                .filter { it.t1 != null }
+                .filterWhen {
+                    it.t1?.permissions?.testBot(event)
+                            ?.flatMap { set ->
                                 set.isEmpty()
                                         .toMono()
                                         .filter { it }
                                         .switchIfEmpty(Mono.error(BotPermissionException(set)))
                             }
                 } // Checks the necessary bot permissions, will throw error on missing permissions, handled later in the chain
-                .filterWhen { command ->
-                    command!!.permissions.testMember(event)
-                            .flatMap { set ->
+                .filterWhen {
+                    it.t1?.permissions?.testMember(event)
+                            ?.flatMap { set ->
                                 set.isEmpty()
                                         .toMono()
                                         .filter { it }
                                         .switchIfEmpty(Mono.error(MemberPermissionException(set)))
                             }
                 } // Checks the user permissions, will throw error on missing permissions, handled later in the chain
+                .flatMap {
+                    getArguments(context, it.t1!!, it.t2)
+                }
                 .flatMapMany { command ->
                     event.message.channel.flatMapMany { c -> c.typeUntil(command!!.call(context)) }
                 } // Execute the command and type until it finishes
@@ -92,24 +94,30 @@ class EventHandler {
                 }
     }
 
-    //    fun traverseTree(broken: List<String>): Command? {
-//        return traverse(traverseBase(broken[0]) ?: return null)
-//    }
-//
-//    fun traverse(node: Node<Command>): Command {
-//        for (child in node.children) {
-//
-//        }
-//    }
-//
-//    fun traverseBase(base: String): Node<Command>? {
-//        for (c in commandManager.commandNodes)
-//            if (c.data.name.equals(base))
-//                return c
-//        return null
-//    }
-//
-    fun breakIntoList(breakable: String): List<String> {
-        return breakable.split("\\s".toRegex())
+    private fun getArguments(context: CommandContext, command: Command, args: List<String>): Mono<Command> {
+        val missingArgs: MutableList<Argument<*>> = mutableListOf()
+        command.arguments
+                .forEachIndexed { i, arg ->
+                    if (i < args.size)
+                        arg.parse(args[i])
+                    else
+                        missingArgs += arg
+                }
+
+        if (missingArgs.size == 0)
+            return Mono.just(command)
+
+        return Flux.fromIterable(missingArgs)
+                .concatMap { argument ->
+                    context.getGuild()
+                            .zipWith(context.event.message.channel)
+                            .flatMap {
+                                WordDialog(it.t1.locale, localization, it.t2, context.event.member.get()).waitOnInput()
+                                        .map { dialog -> argument.parse(dialog) }
+                            }
+                }
+                .then(Mono.just(command))
     }
+
+    private fun breakIntoList(breakable: String): List<String> = if (breakable == "") emptyList() else breakable.split("\\s+".toRegex())
 }
