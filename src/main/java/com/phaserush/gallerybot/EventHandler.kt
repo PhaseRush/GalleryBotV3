@@ -5,7 +5,6 @@ import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.command.CommandManager
 import com.phaserush.gallerybot.data.Localization
 import com.phaserush.gallerybot.data.argument.Argument
-import com.phaserush.gallerybot.data.database.Database
 import com.phaserush.gallerybot.data.dialog.WordDialog
 import com.phaserush.gallerybot.data.exceptions.BotPermissionException
 import com.phaserush.gallerybot.data.exceptions.MemberPermissionException
@@ -16,9 +15,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 
-class EventHandler(
-        private val database: Database
-) {
+class EventHandler {
     private val commandManager: CommandManager = CommandManager()
     private val localization: Localization = Localization()
 
@@ -32,7 +29,7 @@ class EventHandler(
      * @return The Mono with the command instructions
      */
     fun onMessageCreateEvent(event: MessageCreateEvent): Mono<Void> {
-        val context = CommandContext(event, database, localization)
+        val context = CommandContext(event, localization)
         val content = event.message.content.get()
 
         return context.getGuild()

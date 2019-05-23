@@ -1,6 +1,5 @@
 package com.phaserush.gallerybot
 
-import com.phaserush.gallerybot.data.database.Database
 import com.phaserush.gallerybot.data.database.Row
 import discord4j.core.DiscordClient
 import discord4j.core.`object`.entity.Channel
@@ -18,8 +17,7 @@ import java.time.Duration
 
 class ShardManager {
     private val logger: Logger = LoggerFactory.getLogger(ShardManager::class.java)
-    private val database: Database = Database()
-    private val eventHandler = EventHandler(database)
+    private val eventHandler = EventHandler()
     private val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
             .setShardCount(1)
             .build()
