@@ -1,18 +1,24 @@
 package com.phaserush.gallerybot
 
+import com.phaserush.gallerybot.data.database.Database
 import discord4j.core.DiscordClient
 import discord4j.core.`object`.entity.Channel
 import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
+import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.shard.ShardingClientBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.Duration
+import java.time.Instant
 
 class ShardManager {
     private val logger : Logger = LoggerFactory.getLogger(ShardManager::class.java)
-    private val eventHandler = EventHandler()
+    private val database: Database = Database()
+    private val eventHandler = EventHandler(database)
     private val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
             .setShardCount(1)
             .build()
@@ -20,6 +26,25 @@ class ShardManager {
             .map { it.build() }
             .collectList()
             .block()!!
+
+    init {
+        /*Flux.interval(Duration.ofMinutes(1))
+                .map {
+                    database.get("SELECT * FROM contests")
+                            .map {
+                                if (Instant.ofEpochSecond(it.columns["contestEnd"] as Long).isAfter(Instant.now())) {
+                                    shards[0].getGuildById(Snowflake.of(it.columns["id"] as Long))
+                                            .map { guild ->
+                                                guild.systemChannel.map { channel ->
+                                                    channel.createMessage("Your contest is over punk!")
+                                                }
+                                            }
+                                }
+                            }
+                }
+                .subscribe()
+        logger.info("Created scheduled time task")*/
+    }
 
     /**
      * Logs all of the shards in and set the event listeners

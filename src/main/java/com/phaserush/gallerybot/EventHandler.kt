@@ -10,14 +10,19 @@ import com.phaserush.gallerybot.data.dialog.WordDialog
 import com.phaserush.gallerybot.data.exceptions.BotPermissionException
 import com.phaserush.gallerybot.data.exceptions.MemberPermissionException
 import discord4j.core.event.domain.message.MessageCreateEvent
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 
-class EventHandler {
+class EventHandler(
+        private val database: Database
+) {
     private val commandManager: CommandManager = CommandManager()
-    private val database: Database = Database()
     private val localization: Localization = Localization()
+
+    private val logger: Logger = LoggerFactory.getLogger(EventHandler::class.java)
 
     /**
      * Executes upon every message created thweat passed through the filters
