@@ -3,7 +3,10 @@ package com.phaserush.gallerybot.command.commands.contest
 import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.data.argument.WordArgument
+import com.phaserush.gallerybot.data.contest.Contest
+import com.phaserush.gallerybot.data.contest.ContestSubmission
 import com.phaserush.gallerybot.data.database.Row
+import com.phaserush.gallerybot.database
 import discord4j.core.`object`.entity.GuildMessageChannel
 import reactor.core.publisher.Mono
 import reactor.core.publisher.switchIfEmpty
@@ -16,19 +19,12 @@ class CommandSubmit : Command(
     // TODO: Localize this
     override fun call(context: CommandContext): Mono<Void> {
         val contestName = arguments[0].value as String
-        return context.database
-                .get("select * from contests where id=? and name=?", context.event.guildId.get().asLong(), contestName)
-                .next()
-                .flatMap {
-                    context.database.get("select * from submissions where contestName=? and guildId=? and artistId=?",
-                            contestName,
-                            context.event.guildId.get().asLong(),
-                            context.event.member.get().id.asLong())
-                            .next()
-                            .map(Row::columns)
-                            .flatMap { dbCols ->
-                                context.event.message.channel.flatMap { c ->
-                                    c.createMessage("You have already submitted artwork for $contestName!\n ${dbCols["imageUrl"]}")
+        return Contest.of(context.event.guildId.get(), contestName)
+                .flatMap { contest ->
+                    ContestSubmission.of(contestName, context.event.guildId.get(), context.event.member.get().id)
+                            .flatMap { submission ->
+                                context.event.message.channel.flatMap {
+                                    it.createMessage("You have already submitted artwork for $contestName!\n ${submission.imageUrl}")
                                 }
                             }
                             .then()
@@ -37,7 +33,7 @@ class CommandSubmit : Command(
                                             .map(GuildMessageChannel::isNsfw)
                                             .filter { context.event.message.attachments.isNotEmpty() }
                                             .flatMap {
-                                                context.database.set("INSERT into submissions (contestName, guildId, artistId, isNsfw, submissionTime, imageUrl) VALUES (?,?,?,?,?,?)",
+                                                database.set("INSERT into submissions (contestName, guildId, artistId, isNsfw, submissionTime, imageUrl) VALUES (?,?,?,?,?,?)",
                                                         contestName,
                                                         context.event.guildId.get().asLong(),
                                                         context.event.member.get().id.asLong(),
