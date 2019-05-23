@@ -19,16 +19,8 @@ class CommandSubmit : Command(
                 .next()
                 .map { it.columns } // there is an older submission
                 .flatMap { dbCols ->
-                    context.database.set("UPDATE submissions SET submissionDate=?, imageUrl=? WHERE contestName=? AND guildId=? AND artistId=?",
-                            context.event.message.timestamp,
-                            if (context.event.message.attachments.size == 0) throw RuntimeException("Expected attachment but none found") else context.event.message.attachments.first().url,
-                            dbCols["contestName"],
-                            dbCols["guildId"],
-                            dbCols["artistId"]
-                    ).flatMap {
-                        context.event.message.channel.flatMap { c ->
-                            c.createMessage("You have already submitted artwork for $contestName. Your art will be updated from:\n ${dbCols["imageUrl"]}")
-                        }
+                    context.event.message.channel.flatMap { c ->
+                        c.createMessage("You have already submitted artwork for $contestName!\n ${dbCols["imageUrl"]}")
                     }.flatMap {
                         // redirect submission into appropriate submission channel
                         context.database.get("SELECT * FROM contests WHERE name=? AND guildId=?",
@@ -53,11 +45,12 @@ class CommandSubmit : Command(
                                 contestName,
                                 context.event.guildId.get().asLong(),
                                 context.event.member.get().id.asLong(),
-                                context.event.message.channel.isNsfw, // isNsfw
+                                context.event.message.channel.isNsfw.map { it }, // isNsfw
                                 context.event.message.timestamp, // instant
                                 0, // init @ 0 votes
                                 if (context.event.message.attachments.size == 0) throw RuntimeException("Expected attachment but none found") else context.event.message.attachments.first().url
-                        ).then()
+                        )
+                                .log().then()
                 ).onErrorContinue { t, e ->
                     context.event.message.channel.flatMap { c ->
                         c.createMessage(t.message!!)
