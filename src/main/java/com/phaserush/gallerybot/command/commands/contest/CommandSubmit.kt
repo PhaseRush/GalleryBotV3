@@ -48,8 +48,9 @@ class CommandSubmit : Command(
                                                     context.event.message.channel.flatMap { channel ->
                                                         channel.createMessage("Thingy submitted!!")
                                                     }
-                                                }.then()
+                                                }
                                             }
+                                            .then()
                                             .switchIfEmpty(
                                                     context.event.message.channel.flatMap {
                                                         it.createMessage("Please attach the image you'd like to submit!")
