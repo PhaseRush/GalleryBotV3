@@ -1,5 +1,6 @@
 package com.phaserush.gallerybot
 
+import com.phaserush.gallerybot.data.contest.Contest
 import com.phaserush.gallerybot.data.database.Row
 import discord4j.core.DiscordClient
 import discord4j.core.`object`.entity.Channel
@@ -27,14 +28,32 @@ class ShardManager {
             .block()!!
 
     init {
-        createScheduledTask()
+        registerVotingEndInterval()
+        registerSubmissionStartInterval()
+    }
+
+    private fun registerSubmissionStartInterval() {
+        Flux.interval(Duration.ofSeconds(5))
+                .flatMap {
+                    database.get("select * from contests where submissionStartCompleted=false and unix_timestamp() >= submissionStartTime")
+                            .map(Row::columns)
+                            .flatMap { columns ->
+                                shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
+                                        .ofType(GuildMessageChannel::class.java)
+                                        .flatMap { channel->
+                                            // TODO: Probably the channel?
+                                            channel.createMessage("Now accepting submissions!!!")
+                                        }
+                                        .flatMap { database.set("update contests set submissionStartCompleted=true where id=? and name=?", columns["id"], columns["name"]) }
+                            }
+                }.subscribe()
     }
 
     // TODO: Localize this
-    private fun createScheduledTask() {
+    private fun registerVotingEndInterval() {
         Flux.interval(Duration.ofSeconds(5))
                 .flatMap { _ ->
-                    database.get("select * from contests where completed=? and unix_timestamp() > votingEndTime", false)
+                    database.get("select * from contests where votingEndCompleted=false and unix_timestamp() >= votingEndTime")
                             .map(Row::columns)
                             .flatMap { columns ->
                                 shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
@@ -46,11 +65,10 @@ class ShardManager {
                                             else
                                                 channel.createMessage("The contest finished but nobody won :(")
                                         }
-                                        .flatMap { database.set("update contests set completed=true where id=? and name=?", columns["id"] as Long, columns["name"]) }
+                                        .flatMap { database.set("update contests set votingEndCompleted=true where id=? and name=?", columns["id"] as Long, columns["name"]) }
                             }
                 }
                 .subscribe()
-        logger.info("Created scheduled time task")
     }
 
     /**
