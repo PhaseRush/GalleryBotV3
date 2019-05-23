@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono
 import java.sql.PreparedStatement
 import java.sql.ResultSetMetaData
 import java.sql.Types
+import java.time.Instant
 
 class Database {
     private val logger: Logger = LoggerFactory.getLogger(Database::class.java)
@@ -29,13 +30,13 @@ class Database {
      * @param sql The sql statement to execute
      * @return Returns a Mono<Void>
      */
-    fun set(@Language("MariaDB") sql: String, vararg args: Any?): Mono<Void> {
+    fun set(@Language("MariaDB") sql: String, vararg args: Any?): Mono<Int> {
         return Mono.fromCallable {
             poolingDataSource.connection.use { con ->
                 prepareStatement(con.prepareStatement(sql), *args)
                         .executeUpdate()
             }
-        }.then()
+        }
     }
 
     /**
@@ -79,13 +80,9 @@ class Database {
             when (val arg: Any? = args[i - 1]) {
                 is String? -> if (arg == null) statement.setNull(i, Types.VARCHAR) else statement.setString(i, arg)
                 is Long -> statement.setLong(i, arg)
-                else -> println("hello! $i")
+                is Boolean -> statement.setBoolean(i, arg)
+                is Instant -> statement.setLong(i, arg.epochSecond)
             }
-            /*when (arg) {
-                is String? -> if (arg == null) statement.setNull(i, Types.VARCHAR) else statement.setString(i, arg)
-                is Long? -> if (arg == null) statement.setNull(i, Types.BIGINT) else statement.setLong(i, arg)
-                else -> println("You idiot $i")
-            }*/
         }
         return statement
     }
@@ -100,5 +97,11 @@ class Database {
         set("CREATE TABLE IF NOT EXISTS users(id BIGINT PRIMARY KEY NOT NULL, infoCardUrl VARCHAR(1024) DEFAULT NULL)")
                 .block()
         logger.info("Users table created")
+        set("CREATE TABLE IF NOT EXISTS infoCards(artistId BIGINT NOT NULL PRIMARY KEY, artistName VARCHAR(30) NOT NULL DEFAULT 'Artist', otherUrl VARCHAR(200) NOT NULL DEFAULT 'https://i.pinimg.com/736x/56/1c/05/561c05cddc8a57c093203b31539d09eb.jpg', picUrl VARCHAR(200) NOT NULL DEFAULT 'https://i.pinimg.com/736x/56/1c/05/561c05cddc8a57c093203b31539d09eb.jpg', CONSTRAINT fk_infocard_onetoone FOREIGN KEY (artistId) REFERENCES users(id) ON DELETE CASCADE)")
+                .block()
+        set("CREATE TABLE IF NOT EXISTS contests(name VARCHAR(30) NOT NULL, id BIGINT NOT NULL, theme VARCHAR(200) NOT NULL, completed BOOLEAN NOT NULL DEFAULT FALSE, winnerId BIGINT DEFAULT NULL, submissionChannelId BIGINT NOT NULL, nsfwSubmissionChannelId BIGINT DEFAULT NULL, submissionVotingChannelId BIGINT NOT NULL, nsfwSubmissionVotingChannelId BIGINT NOT NULL, submissionStartTime BIGINT NOT NULL DEFAULT 0, submissionEndTime BIGINT NOT NULL, votingStartTime BIGINT NOT NULL, votingEndTime BIGINT NOT NULL, PRIMARY KEY(name, id))")
+                .block()
+        set("CREATE TABLE IF NOT EXISTS submissions(contestName VARCHAR(30) NOT NULL, guildId BIGINT NOT NULL, artistId BIGINT NOT NULL, isNsfw BOOLEAN NOT NULL DEFAULT FALSE, submissionTime BIGINT NOT NULL, numVotes INT NOT NULL DEFAULT 0, imageUrl VARCHAR(200) NOT NULL, PRIMARY KEY(contestName, guildId, artistId), CONSTRAINT fk_submission_weak_entity FOREIGN KEY (contestName, guildId) REFERENCES contests(name, id) ON DELETE CASCADE)")
+                .block()
     }
 }
