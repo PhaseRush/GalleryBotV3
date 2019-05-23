@@ -15,6 +15,9 @@ data class Contest (
         private val nsfwSubmissionChannelId: Snowflake,
 
         // times                                           (Examples given for month of June)
+        // theme voting
+        private val themeVotingStartTime    : ZonedDateTime, // 3 days before end of month   May 29 00:00
+        private val themeVotingEndTime      : ZonedDateTime,  // last day of month            May 31 00:00
         // submission
         private val submissionStartTime     : ZonedDateTime, // beginning of month           June 1  00:00
         private val submissionEndTime       : ZonedDateTime, // first moment of next month   July 1  00:00
@@ -23,8 +26,6 @@ data class Contest (
         private val votingEndTime           : ZonedDateTime, // end of 3rd day of next month July 3  00:00
         // theme
         private val themeSubmissionStartTIme: ZonedDateTime, // 6 days before end of month   June 25 00:00
-        private val themeSubmissionEndTime  : ZonedDateTime, // 3 days before end of month   June 28 00:00
-        // theme voting
-        private val themeVotingStartTime    : ZonedDateTime, // 3 days before end of month   June 28 00:00
-        private val themeVotingEndTime      : ZonedDateTime  // last day of month            June 30 00:00
+        private val themeSubmissionEndTime  : ZonedDateTime // 3 days before end of month   June 28 00:00
+
 )
