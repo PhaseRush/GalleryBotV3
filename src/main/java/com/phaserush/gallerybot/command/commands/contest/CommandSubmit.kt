@@ -5,7 +5,6 @@ import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.data.argument.WordArgument
 import com.phaserush.gallerybot.data.contest.Contest
 import com.phaserush.gallerybot.data.contest.ContestSubmission
-import com.phaserush.gallerybot.data.database.Row
 import com.phaserush.gallerybot.database
 import discord4j.core.`object`.entity.GuildMessageChannel
 import reactor.core.publisher.Mono
