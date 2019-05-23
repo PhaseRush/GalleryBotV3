@@ -19,6 +19,9 @@ data class Contest(
 
         // times                                           (Examples given for month of June)
         // submission
+        private val themeVotingStartTime: Instant, // ur mum
+        private val themeVotingEndTime: Instant,
+
         private val submissionStartTime: Instant, // beginning of month           June 1  00:00
         private val submissionEndTime: Instant, // first moment of next month   July 1  00:00
         // submission voting
@@ -39,6 +42,8 @@ data class Contest(
                                 it["completed"] as Boolean,
                                 Snowflake.of(it["submissionChannelId"] as Long),
                                 Snowflake.of(it["nsfwSubmissionChannelId"] as Long),
+                                Instant.ofEpochSecond(it["themeVotingStartTime"] as Long),
+                                Instant.ofEpochSecond(it["themeVotingEndTime"] as Long),
                                 Instant.ofEpochSecond(it["submissionStartTime"] as Long),
                                 Instant.ofEpochSecond(it["submissionEndTime"] as Long),
                                 Instant.ofEpochSecond(it["votingStartTime"] as Long),
