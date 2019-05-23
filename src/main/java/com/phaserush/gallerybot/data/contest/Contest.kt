@@ -11,6 +11,9 @@ data class Contest (
         private val winnerId: Snowflake,
         private val isDone  : Boolean,
 
+        private val submissionChannelId : Snowflake,
+        private val nsfwSubmissionChannelId: Snowflake,
+
         // times                                           (Examples given for month of June)
         // submission
         private val submissionStartTime     : ZonedDateTime, // beginning of month           June 1  00:00
