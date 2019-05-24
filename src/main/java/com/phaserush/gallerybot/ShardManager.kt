@@ -75,16 +75,21 @@ class ShardManager {
      */
     fun login() {
         Mono.`when`(
-                shards.map { shard ->
-                    shard.login().and(shard.eventDispatcher
-                            .on(MessageCreateEvent::class.java)
-                            .filterWhen { it.message.channel.map { c -> c.type == Channel.Type.GUILD_TEXT } }
-                            .filter { it.member.isPresent }
-                            .filter { !it.member.get().isBot }
-                            .filter { it.message.content.isPresent }
-                            .flatMap { eventHandler.onMessageCreateEvent(it) }
-                    )
-                }
+                shards
+                        .map { shard ->
+                            shard.login()
+                                    .and(shard.eventDispatcher
+                                            .on(MessageCreateEvent::class.java)
+                                            .filterWhen { it.message.channel.map { c -> c.type == Channel.Type.GUILD_TEXT } }
+                                            .filter { it.member.isPresent }
+                                            .filter { !it.member.get().isBot }
+                                            .filter { it.message.content.isPresent }
+                                            .flatMap { eventHandler.onMessageCreateEvent(it) }
+                                    )
+                                    .onErrorContinue { t, u ->
+                                        t.printStackTrace()
+                                    }
+                        }
         ).block()
     }
 

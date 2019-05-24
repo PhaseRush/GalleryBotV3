@@ -37,15 +37,23 @@ class EventHandler {
                 .flatMap { tuple ->
                     getArguments(event, tuple.t1, tuple.t2)
                             .collectList()
-                            .flatMap { tuple.t1.call(CommandContext(event, localization, it)) }
+                            .flatMap {
+                                tuple.t1.call(CommandContext(event, localization, it))
+                            }
                 }
                 .then()
                 .onErrorResume { t ->
                     when (t) {
+                        is IllegalArgumentException -> {
+                            event.message.channel
+                                    .flatMap {
+                                        it.createMessage(t.message!!)
+                                    }
+                                    .then()
+                        }
                         else -> {
-                            event.message.channel.flatMap {
-                                it.createMessage(t.message)
-                            }.then()
+                            t.printStackTrace()
+                            Mono.empty()
                         }
                     }
                 }
@@ -71,11 +79,6 @@ class EventHandler {
                     }
                 }
                 .map { it!! }
-                .onErrorResume { t ->
-                    event.message.channel.flatMap {
-                        it.createMessage(t.message!!)
-                    }
-                }
     }
 
     private fun breakIntoList(breakable: String): List<String> = if (breakable == "") emptyList() else breakable.split("\\s+".toRegex())
