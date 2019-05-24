@@ -83,7 +83,7 @@ class ShardManager {
                             .filter { !it.member.get().isBot }
                             .filter { it.message.content.isPresent }
                             .flatMap { eventHandler.onMessageCreateEvent(it) }
-                    ).onErrorContinue { t, u -> logger.error(t.message) }
+                    )
                 }
         ).block()
     }

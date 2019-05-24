@@ -14,10 +14,6 @@ class CommandCreate : Command(
 ) {
     // TODO: Localize this im sorry
     override fun call(context: CommandContext): Mono<Void> {
-        context.arguments.forEach {
-            println(it.toString())
-        }
-
         return Mono.empty()
 
         /*val contestName = arguments[0].value as String
