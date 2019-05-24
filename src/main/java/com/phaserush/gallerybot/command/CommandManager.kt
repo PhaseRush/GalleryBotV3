@@ -2,6 +2,7 @@ package com.phaserush.gallerybot.command
 
 import com.phaserush.gallerybot.command.commands.CommandContest
 import com.phaserush.gallerybot.command.commands.CommandPing
+import com.phaserush.gallerybot.command.commands.contest.CommandCreate
 import com.phaserush.gallerybot.command.commands.contest.CommandSubmit
 import com.phaserush.gallerybot.data.Node
 import reactor.util.function.Tuple2
@@ -12,7 +13,8 @@ class CommandManager {
     val commandNodes: List<Node<Command>> = listOf(
             Node<Command>(CommandPing()),
             Node(CommandContest(),
-                    listOf(Node<Command>(CommandSubmit())))
+                    listOf(Node<Command>(CommandSubmit()),
+                            Node<Command>(CommandCreate())))
     )
 
     init {

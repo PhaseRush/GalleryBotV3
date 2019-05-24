@@ -80,7 +80,7 @@ data class Contest(
          * take in some params,
          * then create
          */
-        fun create(guildId: Snowflake, name: String, theme: String?,
+        fun create(guildId: Snowflake, name: String,
                    submissionChannelId: Snowflake, nsfwSubmissionChannelId: Snowflake,
                    submissionVotingChannelId: Snowflake, nsfwSubmissionVotingChannelId: Snowflake,
                    themeSubmissionStartTime: Instant, themeSubmissionEndTime: Instant,
@@ -92,7 +92,7 @@ data class Contest(
             val newContest = Contest(
                     name,
                     guildId,
-                    theme,
+                    null,
                     null, // no winner at init
                     submissionChannelId,
                     nsfwSubmissionChannelId,
@@ -120,7 +120,7 @@ data class Contest(
             return database.set("INSERT into contests values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     name,
                     guildId,
-                    theme,
+                    null,
                     false,
                     false,
                     false,

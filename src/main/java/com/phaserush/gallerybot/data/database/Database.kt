@@ -1,16 +1,22 @@
 package com.phaserush.gallerybot.data.database
 
 import com.phaserush.gallerybot.config
+import com.phaserush.gallerybot.data.discord.GuildMeta
+import com.phaserush.gallerybot.data.discord.UserMeta
+import com.phaserush.gallerybot.database
 import com.zaxxer.hikari.HikariDataSource
+import discord4j.core.`object`.util.Snowflake
 import org.intellij.lang.annotations.Language
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.switchIfEmpty
 import java.sql.PreparedStatement
 import java.sql.ResultSetMetaData
 import java.sql.Types
 import java.time.Instant
+import java.util.*
 
 class Database {
     private val logger: Logger = LoggerFactory.getLogger(Database::class.java)
@@ -85,6 +91,47 @@ class Database {
             }
         }
         return statement
+    }
+
+    /**
+     * Fetch the user metadata from the database
+     *
+     * @return The user metadata
+     */
+    fun getUser(id: Snowflake): Mono<UserMeta> {
+        return database.get("SELECT * FROM users WHERE id=?", id.asLong())
+                .next()
+                .map { it.columns }
+                .map {
+                    UserMeta(
+                            id,
+                            Optional.empty() // TODO
+                    )
+                }.switchIfEmpty {
+                    database.set("INSERT INTO users (id) VALUES (?)", id.asLong())
+                            .then(getUser(id))
+                }
+    }
+
+    /**
+     * Fetch the guild metadata from the database
+     *
+     * @return The guild metadata
+     */
+    fun getGuild(id: Snowflake): Mono<GuildMeta> {
+        return database.get("SELECT * FROM guilds WHERE id=?", id.asLong())
+                .next()
+                .map(Row::columns)
+                .map {
+                    GuildMeta(
+                            id,
+                            it["prefix"] as String?, // attribute that corresponds to prefix column
+                            Locale.forLanguageTag(it["locale"] as String)
+                    )
+                }.switchIfEmpty {
+                    database.set("INSERT INTO guilds (id) VALUES (?)", id.asLong())
+                            .then(getGuild(id))
+                }
     }
 
     /**

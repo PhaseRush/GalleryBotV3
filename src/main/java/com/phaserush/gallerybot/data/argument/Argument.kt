@@ -1,5 +1,9 @@
 package com.phaserush.gallerybot.data.argument
 
+import com.phaserush.gallerybot.command.CommandContext
+import discord4j.core.event.domain.message.MessageCreateEvent
+import reactor.core.publisher.Mono
+
 /**
  * An argument is a parameter passed into a command
  */
@@ -14,13 +18,11 @@ abstract class Argument<T>(
          */
         val descriptionKey: String
 ) {
-    var value: T? = null
-
     /**
      * Parse the argument to the form required
      *
      * @param input The input to parse to the required form
      * @return The required form
      */
-    abstract fun parse(input: String)
+    abstract fun parse(event: MessageCreateEvent, input: String): Mono<T>
 }

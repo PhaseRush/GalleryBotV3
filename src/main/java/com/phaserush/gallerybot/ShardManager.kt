@@ -1,6 +1,5 @@
 package com.phaserush.gallerybot
 
-import com.phaserush.gallerybot.data.contest.Contest
 import com.phaserush.gallerybot.data.database.Row
 import discord4j.core.DiscordClient
 import discord4j.core.`object`.entity.Channel
@@ -40,7 +39,7 @@ class ShardManager {
                             .flatMap { columns ->
                                 shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
                                         .ofType(GuildMessageChannel::class.java)
-                                        .flatMap { channel->
+                                        .flatMap { channel ->
                                             // TODO: Probably the channel?
                                             channel.createMessage("Now accepting submissions!!!")
                                         }
@@ -86,8 +85,7 @@ class ShardManager {
                             .flatMap { eventHandler.onMessageCreateEvent(it) }
                     ).onErrorContinue { t, u -> logger.error(t.message) }
                 }
-        )
-                .block()
+        ).block()
     }
 
     /**

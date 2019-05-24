@@ -1,6 +1,6 @@
 package com.phaserush.gallerybot.command
 
-import discord4j.core.`object`.entity.TextChannel
+import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.util.Permission
 import discord4j.core.event.domain.message.MessageCreateEvent
 import reactor.core.publisher.Mono
@@ -27,7 +27,7 @@ class PermissionCheck(
      * if the set is empty all the permissions are present
      */
     fun testMember(event: MessageCreateEvent): Mono<Set<Permission>> {
-        return event.message.channel.ofType(TextChannel::class.java)
+        return event.message.channel.ofType(GuildMessageChannel::class.java)
                 .flatMap { c ->
                     c.getEffectivePermissions(event.member.get().id).map { set ->
                         userPermissions.subtract(set.toList())
@@ -44,7 +44,7 @@ class PermissionCheck(
      * if the set is empty all the permissions are present
      */
     fun testBot(event: MessageCreateEvent): Mono<Set<Permission>> {
-        return event.message.channel.ofType(TextChannel::class.java)
+        return event.message.channel.ofType(GuildMessageChannel::class.java)
                 .flatMap { c ->
                     c.getEffectivePermissions(event.client.selfId.get()).map { set ->
                         botPermissions.subtract(set.toList())

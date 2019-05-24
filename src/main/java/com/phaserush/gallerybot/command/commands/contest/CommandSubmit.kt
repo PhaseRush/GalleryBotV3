@@ -18,7 +18,7 @@ class CommandSubmit : Command(
 ) {
     // TODO: Localize this
     override fun call(context: CommandContext): Mono<Void> {
-        val contestName = arguments[0].value as String
+        val contestName = context.arguments[0] as String
         return Contest.of(context.event.guildId.get(), contestName)
                 .flatMap { contest ->
                     ContestSubmission.of(contestName, context.event.guildId.get(), context.event.member.get().id)
