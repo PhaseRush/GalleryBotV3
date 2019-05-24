@@ -1,6 +1,5 @@
 package com.phaserush.gallerybot.data.argument
 
-import com.phaserush.gallerybot.command.CommandContext
 import discord4j.core.event.domain.message.MessageCreateEvent
 import reactor.core.publisher.Mono
 
@@ -11,7 +10,7 @@ abstract class Argument<T>(
         /**
          * The message key of the name of the argument
          */
-        val name: String,
+        val titleKey: String,
 
         /**
          * The message key of the description of the argument
