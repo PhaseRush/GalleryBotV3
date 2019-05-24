@@ -11,11 +11,12 @@ data class Contest(
         private val name: String,
         private val id: Snowflake,
         private val theme: String,
-        private val winnerId: Snowflake,
-        private val isCompleted: Boolean,
+        private val winnerId: Snowflake?,
 
         private val submissionChannelId: Snowflake,
         private val nsfwSubmissionChannelId: Snowflake,
+        private val submissionVotingChannelId: Snowflake,
+        private val nsfwSubmissionVotingChannelId: Snowflake,
 
         // times                                           (Examples given for month of June)
         // submission
@@ -28,22 +29,33 @@ data class Contest(
         private val submissionEndTime: Instant, // first moment of next month   July 1  00:00
         // submission voting
         private val votingStartTime: Instant, // first day of next month      July 1  00:00
-        private val votingEndTime: Instant // end of 3rd day of next month July 3  00:00
+        private val votingEndTime: Instant, // end of 3rd day of next month July 3  00:00
+
+        // check bools
+        private val themeSubmissionStartCompleted: Boolean,
+        private val themeSubmissionEndCompleted: Boolean,
+        private val themeVotingStartCompleted: Boolean,
+        private val themeVotingEndCompleted: Boolean,
+        private val submissionStartCompleted: Boolean,
+        private val submissionEndCompleted: Boolean,
+        private val votingStartCompleted: Boolean,
+        private val votingEndCompleted: Boolean
 ) {
     companion object {
-        fun of(id: Snowflake, name: String): Mono<Contest> {
-            return database.get("select * from contests where id=? and name=?", id.asLong(), name)
+        fun of(guildId: Snowflake, name: String): Mono<Contest> {
+            return database.get("select * from contests where id=? and name=?", guildId.asLong(), name)
                     .next()
                     .map(Row::columns)
                     .map {
                         Contest(
                                 name,
-                                id,
+                                guildId,
                                 it["theme"] as String,
                                 Snowflake.of(it["winnerId"] as Long),
-                                it["completed"] as Boolean,
                                 Snowflake.of(it["submissionChannelId"] as Long),
                                 Snowflake.of(it["nsfwSubmissionChannelId"] as Long),
+                                Snowflake.of(it["submissionVotingChannelId"] as Long),
+                                Snowflake.of(it["nsfwSubmissionVotingChannelId"] as Long),
                                 Instant.ofEpochSecond(it["themeSubmissionStartTime"] as Long),
                                 Instant.ofEpochSecond(it["themeSubmissionEndTime"] as Long),
                                 Instant.ofEpochSecond(it["themeVotingStartTime"] as Long),
@@ -51,9 +63,82 @@ data class Contest(
                                 Instant.ofEpochSecond(it["submissionStartTime"] as Long),
                                 Instant.ofEpochSecond(it["submissionEndTime"] as Long),
                                 Instant.ofEpochSecond(it["votingStartTime"] as Long),
-                                Instant.ofEpochSecond(it["votingEndTime"] as Long)
+                                Instant.ofEpochSecond(it["votingEndTime"] as Long),
+                                it["themeSubmissionStartCompleted"] as Boolean,
+                                it["themeSubmissionEndCompleted"] as Boolean,
+                                it["themeVotingStartCompleted"] as Boolean,
+                                it["themeVotingEndCompleted"] as Boolean,
+                                it["submissionStartCompleted"] as Boolean,
+                                it["submissionEndCompleted"] as Boolean,
+                                it["votingStartCompleted"] as Boolean,
+                                it["votingEndCompleted"] as Boolean
                         )
                     }
+        }
+
+        fun create(guildId: Snowflake, name: String, theme: String,
+                   submissionChannelId: Snowflake, nsfwSubmissionChannelId: Snowflake,
+                   submissionVotingChannelId: Snowflake, nsfwSubmissionVotingChannelId: Snowflake,
+                   themeSubmissionStartTime: Instant, themeSubmissionEndTime: Instant,
+                   themeVotingStartTime: Instant, themeVotingEndTime: Instant,
+                   submissionStartTime: Instant, submissionEndTime: Instant,
+                   votingStartTime: Instant, votingEndTime: Instant
+
+        ): Mono<Contest> {
+            val newContest = Contest(
+                    name,
+                    guildId,
+                    theme,
+                    null, // no winner at init
+                    submissionChannelId,
+                    nsfwSubmissionChannelId,
+                    submissionVotingChannelId,
+                    nsfwSubmissionVotingChannelId,
+                    themeSubmissionStartTime,
+                    themeSubmissionEndTime,
+                    themeVotingStartTime,
+                    themeVotingEndTime,
+                    submissionStartTime,
+                    submissionEndTime,
+                    votingStartTime,
+                    votingEndTime,
+
+                    themeSubmissionStartCompleted = false,
+                    themeSubmissionEndCompleted = false,
+                    themeVotingStartCompleted = false,
+                    themeVotingEndCompleted = false,
+                    submissionStartCompleted = false,
+                    submissionEndCompleted = false,
+                    votingStartCompleted = false,
+                    votingEndCompleted = false
+            )
+
+            return database.set("INSERT into contests values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    name,
+                    guildId,
+                    theme,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    null,
+                    submissionChannelId,
+                    nsfwSubmissionChannelId,
+                    submissionVotingChannelId,
+                    nsfwSubmissionVotingChannelId,
+                    themeSubmissionStartTime,
+                    themeSubmissionEndTime,
+                    themeVotingStartTime,
+                    themeVotingEndTime,
+                    submissionStartTime,
+                    submissionEndTime,
+                    votingStartTime,
+                    votingEndTime)
+                    .flatMap { Mono.just(newContest) }
         }
     }
 }

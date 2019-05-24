@@ -29,8 +29,15 @@ class CommandSubmit : Command(
                             .then()
                             .switchIfEmpty(
                                     context.event.message.channel.ofType(GuildMessageChannel::class.java)
-                                            .map(GuildMessageChannel::isNsfw)
+//                                            .filter { // fuuuuuckkkkk
+//                                                context.getGuild().map { guild -> Contest.of(guild.id, contestName)}
+//                                                        .flatMap { it.flatMap{ contest ->
+//                                                            Mono.just(Instant.now() > contest.submissionStartTime && Instant.now() < contest.submissionEndTime) } }
+//                                            }
+                                            .switchIfEmpty(Mono.error(Throwable("$contestName has already ended!")))
                                             .filter { context.event.message.attachments.isNotEmpty() }
+                                            .switchIfEmpty(Mono.error(Throwable("No image attached!")))
+                                            .map(GuildMessageChannel::isNsfw)
                                             .flatMap {
                                                 database.set("INSERT into submissions (contestName, guildId, artistId, isNsfw, submissionTime, imageUrl) VALUES (?,?,?,?,?,?)",
                                                         contestName,
@@ -46,11 +53,11 @@ class CommandSubmit : Command(
                                                 }
                                             }
                                             .then()
-                                            .switchIfEmpty(
-                                                    context.event.message.channel.flatMap {
-                                                        it.createMessage("Please attach the image you'd like to submit!")
-                                                    }.then()
-                                            )
+                                            .onErrorResume { error -> // catch either submission error
+                                                context.event.message.channel.flatMap { channel ->
+                                                    channel.createMessage(error.message)
+                                                }.then()
+                                            }
                             )
                 }.switchIfEmpty {
                     context.event.message.channel.flatMap {
