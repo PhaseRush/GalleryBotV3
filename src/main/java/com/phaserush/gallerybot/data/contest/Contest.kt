@@ -10,7 +10,7 @@ data class Contest(
         // metadata
         private val name: String,
         private val id: Snowflake,
-        private val theme: String,
+        private val theme: String?,
         private val winnerId: Snowflake?,
 
         private val submissionChannelId: Snowflake,
@@ -76,7 +76,11 @@ data class Contest(
                     }
         }
 
-        fun create(guildId: Snowflake, name: String, theme: String,
+        /**
+         * take in some params,
+         * then create
+         */
+        fun create(guildId: Snowflake, name: String, theme: String?,
                    submissionChannelId: Snowflake, nsfwSubmissionChannelId: Snowflake,
                    submissionVotingChannelId: Snowflake, nsfwSubmissionVotingChannelId: Snowflake,
                    themeSubmissionStartTime: Instant, themeSubmissionEndTime: Instant,
