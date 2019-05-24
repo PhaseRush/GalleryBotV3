@@ -25,8 +25,8 @@ data class Contest(
         private val themeVotingStartTime: Instant, // May 28 00:00
         private val themeVotingEndTime: Instant, // May 31 00:00
 
-        private val submissionStartTime: Instant, // beginning of month           June 1  00:00
-        private val submissionEndTime: Instant, // first moment of next month   July 1  00:00
+        public val submissionStartTime: Instant, // beginning of month           June 1  00:00
+        public val submissionEndTime: Instant, // first moment of next month   July 1  00:00
         // submission voting
         private val votingStartTime: Instant, // first day of next month      July 1  00:00
         private val votingEndTime: Instant, // end of 3rd day of next month July 3  00:00

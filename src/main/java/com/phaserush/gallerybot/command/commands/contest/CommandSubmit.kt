@@ -9,6 +9,7 @@ import com.phaserush.gallerybot.database
 import discord4j.core.`object`.entity.GuildMessageChannel
 import reactor.core.publisher.Mono
 import reactor.core.publisher.switchIfEmpty
+import java.time.Instant
 
 class CommandSubmit : Command(
         "submit",
@@ -27,41 +28,46 @@ class CommandSubmit : Command(
                                 }
                             }
                             .then()
-                            .switchIfEmpty(
+                            // empty for first time submissions
+                            .switchIfEmpty( //TODO(do a permission check to make sure person is artist)
+                                    // start with the channel. tried moving this down for better "logic" but wont work
                                     context.event.message.channel.ofType(GuildMessageChannel::class.java)
-//                                            .filter { // fuuuuuckkkkk
-//                                                context.getGuild().map { guild -> Contest.of(guild.id, contestName)}
-//                                                        .flatMap { it.flatMap{ contest ->
-//                                                            Mono.just(Instant.now() > contest.submissionStartTime && Instant.now() < contest.submissionEndTime) } }
-//                                            }
-                                            .switchIfEmpty(Mono.error(Throwable("$contestName has already ended!")))
+                                            // make sure within time interval
+                                            .filter { Instant.now().isBefore(contest.submissionEndTime) }
+                                            // throw informative errors, caught downstream
+                                            .switchIfEmpty(Mono.error(Throwable("$contestName: Submission period has already ended!")))
+                                            .filter {  Instant.now().isAfter(contest.submissionStartTime) }
+                                            .switchIfEmpty(Mono.error(Throwable("$contestName: Submission period has not begun yet!")))
+                                            // check that there is a image attachment
                                             .filter { context.event.message.attachments.isNotEmpty() }
-                                            .switchIfEmpty(Mono.error(Throwable("No image attached!")))
+                                            .switchIfEmpty(Mono.error(Throwable("No image attached, submission rejected. Try again with an image!")))
                                             .map(GuildMessageChannel::isNsfw)
                                             .flatMap {
                                                 database.set("INSERT into submissions (contestName, guildId, artistId, isNsfw, submissionTime, imageUrl) VALUES (?,?,?,?,?,?)",
                                                         contestName,
                                                         context.event.guildId.get().asLong(),
                                                         context.event.member.get().id.asLong(),
-                                                        it,
+                                                        it, // isNsfw
                                                         context.event.message.timestamp,
                                                         context.event.message.attachments.first()
                                                 ).flatMap {
                                                     context.event.message.channel.flatMap { channel ->
-                                                        channel.createMessage("Thingy submitted!!")
+                                                        channel.createMessage("Thank you; artwork successfully submitted!")
                                                     }
                                                 }
                                             }
                                             .then()
-                                            .onErrorResume { error -> // catch either submission error
+                                            // errors thrown upstream caught here
+                                            .onErrorResume { error ->
                                                 context.event.message.channel.flatMap { channel ->
-                                                    channel.createMessage(error.message)
+                                                    channel.createMessage(error.message) // might need to message!!
                                                 }.then()
                                             }
                             )
                 }.switchIfEmpty {
                     context.event.message.channel.flatMap {
-                        it.createMessage("That contest doesn't exist!")
+                        it.createMessage("That contest doesn't exist! Please check your spelling and try again, " +
+                                "or use `!contest view` to see currently active contests for ${context.event.guild.map { guild -> guild.name }}")
                     }.then()
                 }
     }
