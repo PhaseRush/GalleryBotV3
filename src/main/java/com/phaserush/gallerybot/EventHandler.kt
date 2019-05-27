@@ -71,14 +71,11 @@ class EventHandler {
                                                 event.message.channel.flatMap { channel ->
                                                     WordDialog(meta.locale, localization, channel, event.member.get())
                                                             .waitOnInput()
-                                                            .flatMap { input ->
-                                                                it.t2.parse(event, input)
-                                                            }
+                                                            .flatMap { input -> it.t2.parse(event, input) }
                                                 }
                                             }
                             )
                 }
-                .map { it!! }
     }
 
     private fun breakIntoList(breakable: String): List<String> = if (breakable == "") emptyList() else breakable.split("\\s+".toRegex())

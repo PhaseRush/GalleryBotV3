@@ -17,7 +17,8 @@ class ChannelArgument : Argument<GuildMessageChannel>("input-channel", "input-ch
             }
             input.matches("[0-9]+".toRegex()) -> {
                 return event.guild.flatMap { guild ->
-                    guild.channels.filter { it.id.asString() == input }
+                    guild.channels
+                            .filter { it.id.asString() == input }
                             .next()
                             .ofType(GuildMessageChannel::class.java)
                             .switchIfEmpty(Mono.error(IllegalArgumentException("Could not find a channel by that ID")))
@@ -25,7 +26,8 @@ class ChannelArgument : Argument<GuildMessageChannel>("input-channel", "input-ch
             }
             else -> {
                 return event.guild.flatMap { guild ->
-                    guild.channels.filter { guild.name == input }
+                    guild.channels
+                            .filter { it.name == input }
                             .next()
                             .ofType(GuildMessageChannel::class.java)
                             .switchIfEmpty(Mono.error(IllegalArgumentException("Could not find a channel by that name")))
