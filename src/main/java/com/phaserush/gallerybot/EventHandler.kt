@@ -63,20 +63,20 @@ class EventHandler {
         return Flux.fromIterable(command.arguments)
                 .index()
                 .concatMap {
-                    if (it.t1.toInt() < args.size) {
-                        it.t2.parse(event, args[it.t1.toInt()])
-                    } else {
-                        database.getGuild(event.guildId.get())
-                                .flatMap { meta ->
-                                    event.message.channel.flatMap { channel ->
-                                        WordDialog(meta.locale, localization, channel, event.member.get())
-                                                .waitOnInput()
-                                                .flatMap { input ->
-                                                    it.t2.parse(event, input)
+                    Mono.justOrEmpty(args.getOrNull(it.t1.toInt()))
+                            .flatMap { arg -> it.t2.parse(event, arg!!) }
+                            .switchIfEmpty(
+                                    database.getGuild(event.guildId.get())
+                                            .flatMap { meta ->
+                                                event.message.channel.flatMap { channel ->
+                                                    WordDialog(meta.locale, localization, channel, event.member.get())
+                                                            .waitOnInput()
+                                                            .flatMap { input ->
+                                                                it.t2.parse(event, input)
+                                                            }
                                                 }
-                                    }
-                                }
-                    }
+                                            }
+                            )
                 }
                 .map { it!! }
     }
