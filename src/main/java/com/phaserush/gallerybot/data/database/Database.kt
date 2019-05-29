@@ -126,7 +126,8 @@ class Database {
                     GuildMeta(
                             id,
                             it["prefix"] as String?, // attribute that corresponds to prefix column
-                            Locale.forLanguageTag(it["locale"] as String)
+                            Locale.forLanguageTag(it["locale"] as String),
+                            if (it["roleReactionMsgId"] == null) null else Snowflake.of(it["roleReactionMsgId"] as Long)
                     )
                 }.switchIfEmpty {
                     database.set("INSERT INTO guilds (id) VALUES (?)", id.asLong())
@@ -138,7 +139,7 @@ class Database {
      * This will be used to create the necessary tables and schemas for the bot, pls dun touch *poke*
      */
     private fun setup() {
-        set("CREATE TABLE IF NOT EXISTS guilds(id BIGINT PRIMARY KEY NOT NULL, prefix VARCHAR(12) DEFAULT NULL, locale VARCHAR(5) NOT NULL DEFAULT 'en-US')")
+        set("CREATE TABLE IF NOT EXISTS guilds(id BIGINT PRIMARY KEY NOT NULL, prefix VARCHAR(12) DEFAULT NULL, locale VARCHAR(5) NOT NULL DEFAULT 'en-US', roleReactionMsgId BIGINT)")
                 .block()
         logger.info("Guild table created")
         set("CREATE TABLE IF NOT EXISTS users(id BIGINT PRIMARY KEY NOT NULL, infoCardUrl VARCHAR(1024) DEFAULT NULL)")
@@ -150,5 +151,10 @@ class Database {
                 .block()
         set("CREATE TABLE IF NOT EXISTS submissions(contestName VARCHAR(30) NOT NULL, guildId BIGINT NOT NULL, artistId BIGINT NOT NULL, isNsfw BOOLEAN NOT NULL DEFAULT FALSE, submissionTime BIGINT NOT NULL, numVotes INT NOT NULL DEFAULT 0, imageUrl VARCHAR(200) NOT NULL, PRIMARY KEY(contestName, guildId, artistId), CONSTRAINT fk_submission_weak_entity FOREIGN KEY (contestName, guildId) REFERENCES contests(name, id) ON DELETE CASCADE)")
                 .block()
+        set("CREATE TABLE IF NOT EXISTS roleEmojis (guildId BIGINT, name VARCHAR(30), roleId BIGINT NOT NULL , PRIMARY KEY (guildId, name), CONSTRAINT fkEmoteWeakEntity FOREIGN KEY (guildID) REFERENCES guilds(id)) ")
+                .block()
+        // proper db structure would require this
+//        set("CREATE TABLE IF NOT EXISTS roleReactionMsgId(guildId BIGINT PRIMARY KEY, messageId BIGINT, CONSTRAINT fk_reactionMsg_weak_entity FOREIGN KEY (guildId) REFERENCES guilds(id) ON DELETE CASCADE)")
+//                .block()
     }
 }

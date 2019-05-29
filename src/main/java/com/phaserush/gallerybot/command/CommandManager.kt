@@ -2,6 +2,7 @@ package com.phaserush.gallerybot.command
 
 import com.phaserush.gallerybot.command.commands.CommandContest
 import com.phaserush.gallerybot.command.commands.CommandPing
+import com.phaserush.gallerybot.command.commands.CommandRoleEmojiAssign
 import com.phaserush.gallerybot.command.commands.contest.CommandCreate
 import com.phaserush.gallerybot.command.commands.contest.CommandSubmit
 import com.phaserush.gallerybot.data.Node
@@ -14,7 +15,8 @@ class CommandManager {
             Node<Command>(CommandPing()),
             Node(CommandContest(),
                     listOf(Node<Command>(CommandSubmit()),
-                            Node<Command>(CommandCreate())))
+                            Node<Command>(CommandCreate()))),
+            Node<Command>(CommandRoleEmojiAssign())
     )
 
     init {

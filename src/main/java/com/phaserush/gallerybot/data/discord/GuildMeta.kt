@@ -6,5 +6,6 @@ import java.util.*
 data class GuildMeta(
         val id      : Snowflake,
         val prefix  : String?,
-        val locale  : Locale
+        val locale  : Locale,
+        val roleReactionMsgId: Snowflake?
 )

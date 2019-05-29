@@ -59,6 +59,16 @@ class EventHandler {
                 }
     }
 
+    /**
+     * function for artist role assignment
+     */
+//    fun onReactionAddEvent(event: ReactionAddEvent): Mono<Void> {
+//        return Mono.just(event)
+//                .map { it.messageId.asLong() }
+//                .filter { }
+//    }
+
+
     private fun getArguments(event: MessageCreateEvent, command: Command, args: List<String>): Flux<Any> {
         return Flux.fromIterable(command.arguments)
                 .index()

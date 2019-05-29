@@ -58,9 +58,9 @@ class CommandSubmit : Command(
                                             }
                                             .then()
                                             // errors thrown upstream caught here
-                                            .onErrorResume { error ->
+                                            .onErrorResume { throwable ->
                                                 context.event.message.channel.flatMap { channel ->
-                                                    channel.createMessage(error.message) // might need to message!!
+                                                    channel.createMessage(throwable.message!!) // might need to message!!
                                                 }.then()
                                             }
                             )
