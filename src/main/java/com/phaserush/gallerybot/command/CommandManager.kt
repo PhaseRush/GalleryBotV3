@@ -5,6 +5,7 @@ import com.phaserush.gallerybot.command.commands.CommandPing
 import com.phaserush.gallerybot.command.commands.CommandRoleEmojiAssign
 import com.phaserush.gallerybot.command.commands.contest.CommandCreate
 import com.phaserush.gallerybot.command.commands.contest.CommandSubmit
+import com.phaserush.gallerybot.command.commands.contest.CommandView
 import com.phaserush.gallerybot.data.Node
 import reactor.util.function.Tuple2
 import reactor.util.function.Tuples
@@ -15,7 +16,8 @@ class CommandManager {
             Node<Command>(CommandPing()),
             Node(CommandContest(),
                     listOf(Node<Command>(CommandSubmit()),
-                            Node<Command>(CommandCreate()))),
+                            Node<Command>(CommandCreate()),
+                            Node<Command>(CommandView()))),
             Node<Command>(CommandRoleEmojiAssign())
     )
 
@@ -37,7 +39,7 @@ class CommandManager {
             val word = list[i]
             val nextCmd = checkChildren(nextChildren, word)
             if (nextCmd == null) {
-                return Tuples.of(command, getArgs(i, list))
+                return Tuples.of(command, getArgs(i, list)) // TODO: Fix NPE when no base command is found
             } else {
                 command = nextCmd
                 nextChildren = nextChildren.flatMap { it.children }.toMutableList()

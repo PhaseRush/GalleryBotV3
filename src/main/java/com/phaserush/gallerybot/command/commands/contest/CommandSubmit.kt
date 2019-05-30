@@ -65,9 +65,11 @@ class CommandSubmit : Command(
                                             }
                             )
                 }.switchIfEmpty {
-                    context.event.message.channel.flatMap {
-                        it.createMessage("That contest doesn't exist! Please check your spelling and try again, " +
-                                "or use `!contest view` to see currently active contests for ${context.event.guild.map { guild -> guild.name }}")
+                    context.event.message.channel.flatMap { channel ->
+                        context.event.guild.flatMap {
+                            channel.createMessage("That contest doesn't exist! Please check your spelling and try again, " +
+                                    "or use `!contest view` to see currently active contests for ${it.name}")
+                        }
                     }.then()
                 }
     }
