@@ -6,6 +6,7 @@ import discord4j.core.`object`.entity.Channel
 import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
+import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.shard.ShardingClientBuilder
@@ -16,7 +17,6 @@ import reactor.core.publisher.Mono
 import java.time.Duration
 
 class ShardManager {
-    private val logger: Logger = LoggerFactory.getLogger(ShardManager::class.java)
     private val eventHandler = EventHandler()
     private val shards: List<DiscordClient> = ShardingClientBuilder(config.token)
             .setShardCount(1)
@@ -27,12 +27,48 @@ class ShardManager {
             .block()!!
 
     init {
+        registerVotingStartInterval()
         registerVotingEndInterval()
         registerSubmissionStartInterval()
+        registerSubmissionEndInterval()
     }
 
+    /*private fun registerThemeVotingStartInterval() {
+        Flux.interval(Duration.ofMinutes(1))
+                .flatMap {
+                    database.get("select * from contests where themeSubmissionStartCompleted=false and unix_timestamp() >= themeSubmissionStartTime")
+                            .map(Row::columns)
+                            .flatMap { columns ->
+                                shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
+                                        .ofType(GuildMessageChannel::class.java)
+                                        .flatMap { channel ->
+                                            channel.createMessage("Now accepting theme submissions!")
+                                        }
+                                        .flatMap { database.set("update contests set themeSubmissionStartCompleted=true where id=? and name=?", columns["id"], columns["name"]) }
+                            }
+                }
+                .subscribe()
+    }
+
+    private fun registerThemeVotingEndInterval() {
+        Flux.interval(Duration.ofMinutes(1))
+                .flatMap {
+                    database.get("select * from contests where themeSubmissionEndCompleted=false and unix_timestamp() >= themeSubmissionEndTime")
+                            .map(Row::columns)
+                            .flatMap { columns ->
+                                shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
+                                        .ofType(GuildMessageChannel::class.java)
+                                        .flatMap { channel ->
+                                            channel.createMessage("The winning theme is ") // TODO: Get theme with most votes
+                                        }
+                                        .flatMap { database.set("update contests set themeSubmissionEndCompleted=true where id=? and name=?", columns["id"], columns["name"]) }
+                            }
+                }
+                .subscribe()
+    }*/
+
     private fun registerSubmissionStartInterval() {
-        Flux.interval(Duration.ofSeconds(5))
+        Flux.interval(Duration.ofMinutes(1))
                 .flatMap {
                     database.get("select * from contests where submissionStartCompleted=false and unix_timestamp() >= submissionStartTime")
                             .map(Row::columns)
@@ -40,31 +76,86 @@ class ShardManager {
                                 shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
                                         .ofType(GuildMessageChannel::class.java)
                                         .flatMap { channel ->
-                                            // TODO: Probably the channel?
-                                            channel.createMessage("Now accepting submissions!!!")
+                                            channel.createMessage("Now accepting submissions!!! Happy drawing!!!")
                                         }
-                                        .flatMap { database.set("update contests set submissionStartCompleted=true where id=? and name=?", columns["id"], columns["name"]) }
+                                        .then(
+                                                database.set("update contests set submissionStartCompleted=true where id=? and name=?", columns["id"], columns["name"])
+                                        )
                             }
-                }.subscribe()
+                }
+                .subscribe()
     }
 
-    // TODO: Localize this
-    private fun registerVotingEndInterval() {
-        Flux.interval(Duration.ofSeconds(5))
-                .flatMap { _ ->
-                    database.get("select * from contests where votingEndCompleted=false and unix_timestamp() >= votingEndTime")
+    private fun registerSubmissionEndInterval() {
+        Flux.interval(Duration.ofMinutes(1))
+                .flatMap {
+                    database.get("select * from contests where submissionEndCompleted=false and unix_timestamp() >= submissionEndTime")
                             .map(Row::columns)
                             .flatMap { columns ->
                                 shards[0].getChannelById(Snowflake.of(columns["submissionChannelId"] as Long))
                                         .ofType(GuildMessageChannel::class.java)
                                         .flatMap { channel ->
-                                            if (columns["winnerId"] != null)
-                                                shards[0].getUserById(Snowflake.of(columns["winnerId"] as Long))
-                                                        .flatMap { channel.createMessage("Your contest is over punk!\nThe winner is ${it.mention}") }
-                                            else
-                                                channel.createMessage("The contest finished but nobody won :(")
+                                            channel.createMessage("Submissions are now closed!")
                                         }
-                                        .flatMap { database.set("update contests set votingEndCompleted=true where id=? and name=?", columns["id"] as Long, columns["name"]) }
+                                        .then(
+                                                database.set("update contests set submissionEndCompleted=true where id=? and name=?", columns["id"], columns["name"])
+                                        )
+                            }
+                }
+                .subscribe()
+    }
+
+    private fun registerVotingStartInterval() {
+        Flux.interval(Duration.ofMinutes(1))
+                .flatMap {
+                    database.get("select * from contests where votingStartCompleted=false and unix_timestamp() >= votingStartTime")
+                            .map(Row::columns)
+                            .flatMap { columns ->
+                                Mono.zip(
+                                        shards[0].getChannelById(Snowflake.of(columns["submissionVotingChannelId"] as Long)).ofType(GuildMessageChannel::class.java),
+                                        shards[0].getChannelById(Snowflake.of(columns["nsfwSubmissionVotingChannelId"] as Long)).ofType(GuildMessageChannel::class.java)
+                                )
+                                        .flatMap { channels ->
+                                            database.get("select * from submissions where guildId=? and contestName=?", columns["id"], columns["name"])
+                                                    .map(Row::columns)
+                                                    .flatMap { submission ->
+                                                        if (submission["isNsfw"] as Boolean)
+                                                            channels.t2.createMessage(submission["imageUrl"] as String)
+                                                        else
+                                                            channels.t1.createMessage(submission["imageUrl"] as String)
+                                                    }
+                                                    .flatMap {
+                                                        it.addReaction(ReactionEmoji.unicode("\u2B06"))
+                                                    }
+                                                    .then(
+                                                            channels.t1.createMessage("Voting has started!")
+                                                                    .flatMap { database.set("update contests set votingStartCompleted=true where id=? and name=?", columns["id"], columns["name"]) }
+                                                    )
+                                        }
+                            }
+                }
+                .subscribe()
+    }
+
+    private fun registerVotingEndInterval() {
+        Flux.interval(Duration.ofMinutes(1))
+                .flatMap {
+                    database.get("select * from contests where votingEndCompleted=false and unix_timestamp() >= votingEndTime")
+                            .map(Row::columns)
+                            .flatMap { columns ->
+                                Mono.zip(
+                                        database.get("select * from submissions where guildId=? and contestName=? order by numVotes desc limit 1", columns["id"], columns["name"]).next().map(Row::columns),
+                                        shards[0].getChannelById(Snowflake.of(columns["submissionVotingChannelId"] as Long)).ofType(GuildMessageChannel::class.java)
+                                )
+                                        .flatMap { tuple ->
+                                            shards[0].getUserById(Snowflake.of(tuple.t1["artistId"] as Long))
+                                                    .flatMap {
+                                                        tuple.t2.createMessage("${it.mention} has won the contest with ${tuple.t1["numVotes"]} votes!")
+                                                    }
+                                        }
+                                        .then(
+                                                database.set("update contests set votingEndCompleted=true where id=? and name=?", columns["id"], columns["name"])
+                                        )
                             }
                 }
                 .subscribe()
@@ -74,22 +165,19 @@ class ShardManager {
      * Logs all of the shards in and set the event listeners
      */
     fun login() {
-        Mono
-                .`when`(
-                        shards
-                                .map { shard ->
-                                    shard.login()
-                                            .and(shard.eventDispatcher
-                                                    .on(MessageCreateEvent::class.java)
-                                                    .filterWhen { it.message.channel.map { c -> c.type == Channel.Type.GUILD_TEXT } }
-                                                    .filter { it.member.isPresent }
-                                                    .filter { !it.member.get().isBot }
-                                                    .filter { it.message.content.isPresent }
-                                                    .flatMap { eventHandler.onMessageCreateEvent(it) }
-                                            )
-                                }
-                )
-                .block()
+        Mono.`when`(
+                shards.map { shard ->
+                    shard.login()
+                            .and(shard.eventDispatcher
+                                    .on(MessageCreateEvent::class.java)
+                                    .filterWhen { it.message.channel.map { c -> c.type == Channel.Type.GUILD_TEXT } }
+                                    .filter { it.member.isPresent }
+                                    .filter { !it.member.get().isBot }
+                                    .filter { it.message.content.isPresent }
+                                    .flatMap { eventHandler.onMessageCreateEvent(it) }
+                            )
+                }
+        ).block()
     }
 
     /**
