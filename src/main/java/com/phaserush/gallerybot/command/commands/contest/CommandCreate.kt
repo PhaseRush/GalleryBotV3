@@ -2,15 +2,18 @@ package com.phaserush.gallerybot.command.commands.contest
 
 import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
+import com.phaserush.gallerybot.command.PermissionCheck
 import com.phaserush.gallerybot.data.argument.ChannelArgument
 import com.phaserush.gallerybot.data.argument.WordArgument
+import discord4j.core.`object`.util.Permission
 import reactor.core.publisher.Mono
 
 class CommandCreate : Command(
         "create",
         "create-help",
         listOf(WordArgument(), ChannelArgument(), ChannelArgument(), ChannelArgument(), ChannelArgument()/*,
-                TimeArgument(), TimeArgument(), TimeArgument(), TimeArgument(), TimeArgument(), TimeArgument()*/)
+                TimeArgument(), TimeArgument(), TimeArgument(), TimeArgument(), TimeArgument(), TimeArgument()*/),
+        PermissionCheck(setOf(Permission.SEND_MESSAGES), setOf(Permission.ADMINISTRATOR))
 ) {
     // TODO: Localize this im sorry
     override fun call(context: CommandContext): Mono<Void> {
