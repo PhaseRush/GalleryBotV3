@@ -9,9 +9,9 @@ import discord4j.core.`object`.presence.Presence
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.domain.message.MessageCreateEvent
+import discord4j.core.event.domain.message.ReactionAddEvent
+import discord4j.core.event.domain.message.ReactionRemoveEvent
 import discord4j.core.shard.ShardingClientBuilder
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
@@ -106,7 +106,7 @@ class ShardManager {
     }
 
     private fun registerVotingStartInterval() {
-        Flux.interval(Duration.ofMinutes(1))
+        Flux.interval(Duration.ofSeconds(5))
                 .flatMap {
                     database.get("select * from contests where votingStartCompleted=false and unix_timestamp() >= votingStartTime")
                             .map(Row::columns)
@@ -175,6 +175,18 @@ class ShardManager {
                                     .filter { !it.member.get().isBot }
                                     .filter { it.message.content.isPresent }
                                     .flatMap { eventHandler.onMessageCreateEvent(it) }
+                            )
+                            .and(shard.eventDispatcher
+                                    .on(ReactionAddEvent::class.java)
+                                    .filterWhen { it.message.map { message -> message.author.isPresent } }
+                                    .filterWhen { it.user.map { user -> !user.isBot } }
+                                    .flatMap { eventHandler.onReactionAddEvent(it) }
+                            )
+                            .and(shard.eventDispatcher
+                                    .on(ReactionRemoveEvent::class.java)
+                                    .filterWhen { it.message.map { message -> message.author.isPresent } }
+                                    .filterWhen { it.user.map { user -> !user.isBot } }
+                                    .flatMap { eventHandler.onReactionRemoveEvent(it) }
                             )
                 }
         ).block()

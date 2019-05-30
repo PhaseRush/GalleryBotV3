@@ -4,8 +4,11 @@ import com.phaserush.gallerybot.command.Command
 import com.phaserush.gallerybot.command.CommandContext
 import com.phaserush.gallerybot.command.CommandManager
 import com.phaserush.gallerybot.data.Localization
+import com.phaserush.gallerybot.data.database.Row
 import com.phaserush.gallerybot.data.dialog.WordDialog
 import discord4j.core.event.domain.message.MessageCreateEvent
+import discord4j.core.event.domain.message.ReactionAddEvent
+import discord4j.core.event.domain.message.ReactionRemoveEvent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
@@ -16,6 +19,30 @@ class EventHandler {
     private val localization: Localization = Localization()
 
     private val logger: Logger = LoggerFactory.getLogger(EventHandler::class.java)
+
+    fun onReactionAddEvent(event: ReactionAddEvent): Mono<Void> {
+        return database.get("select * from contests where submissionVotingChannelId=? or nsfwSubmissionVotingChannelId=?", event.channelId.asLong(), event.channelId.asLong())
+                .next()
+                .map(Row::columns)
+                .flatMap { columns ->
+                    event.message.flatMap { message ->
+                        database.set("update submissions set numVotes = numVotes + 1 where contestName=? and imageUrl=? and guildId=?", columns["name"], message.content.get(), event.guildId.get().asLong())
+                    }
+                }
+                .then()
+    }
+
+    fun onReactionRemoveEvent(event: ReactionRemoveEvent): Mono<Void> {
+        return database.get("select * from contests where submissionVotingChannelId=? or nsfwSubmissionVotingChannelId=?", event.channelId.asLong(), event.channelId.asLong())
+                .next()
+                .map(Row::columns)
+                .flatMap { columns ->
+                    event.message.flatMap { message ->
+                        database.set("update submissions set numVotes = numVotes - 1 where contestName=? and imageUrl=? and guildId=?", columns["name"], message.content.get(), event.guildId.get().asLong())
+                    }
+                }
+                .then()
+    }
 
     /**
      * Executes upon every message created thweat passed through the filters
