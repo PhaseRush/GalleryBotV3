@@ -62,11 +62,33 @@ class EventHandler {
                             .mapT1 { it!! }
                 }
                 .flatMap { tuple ->
-                    getArguments(event, tuple.t1, tuple.t2)
-                            .collectList()
+                    tuple.t1.permissions.testBot(event)
+                            .filter { it.isNotEmpty() }
                             .flatMap {
-                                tuple.t1.call(CommandContext(event, localization, it))
+                                event.message.channel
+                                        .flatMap { channel ->
+                                            channel.createMessage("I'm missing the following permissions: ${it.joinToString()}")
+                                        }
                             }
+                            .then()
+                            .switchIfEmpty(
+                                    tuple.t1.permissions.testMember(event)
+                                            .filter { it.isNotEmpty() }
+                                            .flatMap {
+                                                event.message.channel
+                                                        .flatMap { channel ->
+                                                            channel.createMessage("You're missing the following permissions: ${it.joinToString()}")
+                                                        }
+                                            }
+                                            .then()
+                                            .switchIfEmpty(
+                                                    getArguments(event, tuple.t1, tuple.t2)
+                                                            .collectList()
+                                                            .flatMap {
+                                                                tuple.t1.call(CommandContext(event, localization, it)) // TODO: This is broken
+                                                            }
+                                            )
+                            )
                 }
                 .then()
                 .onErrorResume { t ->
