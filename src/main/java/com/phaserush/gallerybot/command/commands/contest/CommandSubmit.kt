@@ -26,7 +26,6 @@ class CommandSubmit : Command(
                                     it.createMessage("You have already submitted artwork for $contestName!\n ${submission.imageUrl}")
                                 }
                             }
-                            .then()
                             // empty for first time submissions
                             .switchIfEmpty( //TODO(do a permission check to make sure person is artist)
                                     // start with the channel. tried moving this down for better "logic" but wont work
@@ -42,7 +41,7 @@ class CommandSubmit : Command(
                                             .switchIfEmpty(Mono.error(Throwable("No image attached, submission rejected. Try again with an image!")))
                                             .map(GuildMessageChannel::isNsfw)
                                             .flatMap {
-                                                database.set("INSERT into submissions (contestName, guildId, artistId, isNsfw, submissionTime, imageUrl) VALUES (?,?,?,?,?,?)",
+                                                database.set("insert into submissions (contestName, guildId, artistId, isNsfw, submissionTime, imageUrl) values (?,?,?,?,?,?)",
                                                         contestName,
                                                         context.event.guildId.get().asLong(),
                                                         context.event.member.get().id.asLong(),
@@ -55,21 +54,16 @@ class CommandSubmit : Command(
                                                     }
                                                 }
                                             }
-                                            .then()
-                                            // errors thrown upstream caught here
-                                            .onErrorResume { throwable ->
-                                                context.event.message.channel.flatMap { channel ->
-                                                    channel.createMessage(throwable.message!!) // might need to message!!
-                                                }.then()
-                                            }
                             )
-                }.switchIfEmpty(
+                }
+                .switchIfEmpty(
                         context.event.message.channel.flatMap { channel ->
                             context.event.guild.flatMap {
                                 channel.createMessage("That contest doesn't exist! Please check your spelling and try again, " +
                                         "or use `!contest view` to see currently active contests for ${it.name}")
-                            }.then()
+                            }
                         }
                 )
+                .then()
     }
 }
