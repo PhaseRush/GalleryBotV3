@@ -1,6 +1,7 @@
 package com.phaserush.gallerybot.command
 
 import com.phaserush.gallerybot.command.commands.CommandContest
+import com.phaserush.gallerybot.command.commands.CommandEmpty
 import com.phaserush.gallerybot.command.commands.CommandPing
 import com.phaserush.gallerybot.command.commands.CommandRoleEmojiAssign
 import com.phaserush.gallerybot.command.commands.contest.CommandCreate
@@ -21,6 +22,8 @@ class CommandManager {
             Node<Command>(CommandRoleEmojiAssign())
     )
 
+    private val empty : Command = CommandEmpty() // keep one private instance so dont have to make new one everytime
+
     init {
         val temp: MutableMap<String, Command> = mutableMapOf()
         commandNodes.forEach {
@@ -39,7 +42,8 @@ class CommandManager {
             val word = list[i]
             val nextCmd = checkChildren(nextChildren, word)
             if (nextCmd == null) {
-                return Tuples.of(command, getArgs(i, list)) // TODO: Fix NPE when no base command is found
+                return Tuples.of(command ?: empty,
+                        getArgs(i, list))
             } else {
                 command = nextCmd
                 nextChildren = nextChildren.flatMap { it.children }.toMutableList()

@@ -14,11 +14,11 @@ class CommandRoleEmojiAssign : Command(
         listOf(WordArgument(), RoleArgument())
 ) {
     override fun call(context: CommandContext): Mono<Void> {
-        return database.set("INSERT INTO roleemojis values (?,?,?)",
+        return database.set("INSERT IGNORE INTO roleemojis values (?,?,?)", // ignore to prevent error when inserting same emoji in same server (duplicate pk)
                 context.event.guildId.get().asLong(),
-                context.arguments[0], // incorrect, need to parse more
+                context.arguments[0], // incorrect, need to parse more (gives unicode or smth, not discord literal)
                 (context.arguments[1] as Role).id.asLong())
-                .map { println("run") }
+                .map { println(context.arguments[0]) }
                 .then()
     }
 }

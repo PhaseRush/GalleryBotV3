@@ -61,6 +61,9 @@ class EventHandler {
                     commandManager.traverseThis(breakIntoList(string))
                             .mapT1 { it!! }
                 }
+                .filter {
+                    it.t1.name != "None"
+                }
                 .flatMap { tuple ->
                     tuple.t1.permissions.testBot(event)
                             .filter { it.isNotEmpty() }
