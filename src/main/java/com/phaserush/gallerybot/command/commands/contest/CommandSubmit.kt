@@ -54,6 +54,12 @@ class CommandSubmit : Command(
                                                     }
                                                 }
                                             }
+                                            .onErrorResume { t ->
+                                                context.event.message.channel
+                                                        .flatMap { channel ->
+                                                            channel.createMessage(t.message!!)
+                                                        }
+                                            }
                             )
                 }
                 .switchIfEmpty(
