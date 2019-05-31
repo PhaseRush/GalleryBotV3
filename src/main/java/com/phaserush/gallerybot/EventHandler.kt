@@ -62,7 +62,7 @@ class EventHandler {
                             .mapT1 { it!! }
                 }
                 .filter {
-                    it.t1.name != "None"
+                    it.t1.name != "empty" // filter the empty case for node traversal (Tuple cannot contain null)
                 }
                 .flatMap { tuple ->
                     tuple.t1.permissions.testBot(event)
