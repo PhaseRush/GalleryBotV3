@@ -51,7 +51,7 @@ data class Contest(
                                 name,
                                 guildId,
                                 it["theme"] as String,
-                                Snowflake.of(it["winnerId"] as Long),
+                                null,
                                 Snowflake.of(it["submissionChannelId"] as Long),
                                 Snowflake.of(it["nsfwSubmissionChannelId"] as Long),
                                 Snowflake.of(it["submissionVotingChannelId"] as Long),

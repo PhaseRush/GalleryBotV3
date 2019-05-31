@@ -8,7 +8,6 @@ import com.phaserush.gallerybot.data.contest.ContestSubmission
 import com.phaserush.gallerybot.database
 import discord4j.core.`object`.entity.GuildMessageChannel
 import reactor.core.publisher.Mono
-import reactor.core.publisher.switchIfEmpty
 import java.time.Instant
 
 class CommandSubmit : Command(
@@ -36,7 +35,7 @@ class CommandSubmit : Command(
                                             .filter { Instant.now().isBefore(contest.submissionEndTime) }
                                             // throw informative errors, caught downstream
                                             .switchIfEmpty(Mono.error(Throwable("$contestName: Submission period has already ended!")))
-                                            .filter {  Instant.now().isAfter(contest.submissionStartTime) }
+                                            .filter { Instant.now().isAfter(contest.submissionStartTime) }
                                             .switchIfEmpty(Mono.error(Throwable("$contestName: Submission period has not begun yet!")))
                                             // check that there is a image attachment
                                             .filter { context.event.message.attachments.isNotEmpty() }
@@ -49,7 +48,7 @@ class CommandSubmit : Command(
                                                         context.event.member.get().id.asLong(),
                                                         it, // isNsfw
                                                         context.event.message.timestamp,
-                                                        context.event.message.attachments.first()
+                                                        context.event.message.attachments.first().url
                                                 ).flatMap {
                                                     context.event.message.channel.flatMap { channel ->
                                                         channel.createMessage("Thank you; artwork successfully submitted!")
@@ -64,13 +63,13 @@ class CommandSubmit : Command(
                                                 }.then()
                                             }
                             )
-                }.switchIfEmpty {
-                    context.event.message.channel.flatMap { channel ->
-                        context.event.guild.flatMap {
-                            channel.createMessage("That contest doesn't exist! Please check your spelling and try again, " +
-                                    "or use `!contest view` to see currently active contests for ${it.name}")
+                }.switchIfEmpty(
+                        context.event.message.channel.flatMap { channel ->
+                            context.event.guild.flatMap {
+                                channel.createMessage("That contest doesn't exist! Please check your spelling and try again, " +
+                                        "or use `!contest view` to see currently active contests for ${it.name}")
+                            }.then()
                         }
-                    }.then()
-                }
+                )
     }
 }

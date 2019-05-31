@@ -12,7 +12,6 @@ data class ContestSubmission(
         val guildId: Snowflake,
 
         // submission info
-        val messageId: Snowflake, // used for getting message which can then be used to determine rest of info
         val isNsfw: Boolean = false,
         val submissionTime: Instant,
 
@@ -31,7 +30,6 @@ data class ContestSubmission(
                                 name,
                                 memberId,
                                 Snowflake.of(it["guildId"] as Long),
-                                Snowflake.of(it["messageId"] as Long),
                                 it["isNsfw"] as Boolean,
                                 Instant.ofEpochSecond(it["submissionTime"] as Long),
                                 it["imageUrl"] as String,

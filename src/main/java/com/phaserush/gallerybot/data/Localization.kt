@@ -1,13 +1,13 @@
 package com.phaserush.gallerybot.data
 
-import java.io.File
 import java.util.*
 
 class Localization {
-    private val locales: Set<Locale> = File(Localization::class.java.classLoader.getResource("locale/").path)
+    /*private val locales: Set<Locale> = File(Localization::class.java.classLoader.getResource("locale/").path)
             .listFiles()
             .map { Locale.forLanguageTag(it.name.substring(7, 12).replace('_', '-')) }
-            .toSet()
+            .toSet()*/
+    // TODO: This doesn't work when compiled to a jar for some reason
 
     /**
      * Get the localized message for a key

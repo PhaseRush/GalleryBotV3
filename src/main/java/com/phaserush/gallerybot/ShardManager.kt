@@ -106,7 +106,7 @@ class ShardManager {
     }
 
     private fun registerVotingStartInterval() {
-        Flux.interval(Duration.ofSeconds(5))
+        Flux.interval(Duration.ofMinutes(1))
                 .flatMap {
                     database.get("select * from contests where votingStartCompleted=false and unix_timestamp() >= votingStartTime")
                             .map(Row::columns)
