@@ -180,6 +180,7 @@ class ShardManager {
                                     .on(ReactionAddEvent::class.java)
                                     .filterWhen { it.message.map { message -> message.author.isPresent } }
                                     .filterWhen { it.user.map { user -> !user.isBot } }
+                                    .filter { it.emoji.asUnicodeEmoji().isPresent }
                                     .filter { it.emoji.asUnicodeEmoji().get().raw == "\u2B06" }
                                     .flatMap { eventHandler.onReactionAddEvent(it) }
                             )
@@ -187,6 +188,7 @@ class ShardManager {
                                     .on(ReactionRemoveEvent::class.java)
                                     .filterWhen { it.message.map { message -> message.author.isPresent } }
                                     .filterWhen { it.user.map { user -> !user.isBot } }
+                                    .filter { it.emoji.asUnicodeEmoji().isPresent }
                                     .filter { it.emoji.asUnicodeEmoji().get().raw == "\u2B06" }
                                     .flatMap { eventHandler.onReactionRemoveEvent(it) }
                             )
